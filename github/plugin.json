@@ -1,0 +1,18 @@
+{
+  "id": "github",
+  "name": "GitHub",
+  "description": "查看仓库、Issue 和 Pull Request，并创建 Issue、评论与 Pull Request。",
+  "pe": "用户要求管理 GitHub 仓库时使用本插件。先读取仓库、Issue 或 Pull Request，再执行创建或评论。写操作会向用户确认。不要在回答中输出访问令牌。",
+  "version": "1.0.0",
+  "files": {"main.js": ""},
+  "networkHosts": ["api.github.com"],
+  "config": [{"id": "token", "title": "GitHub 访问令牌", "type": "secret", "required": true}],
+  "tools": [
+    {"name":"repos","description":"列出当前 GitHub 账号可访问的仓库。","parameters":{"page":{"type":"number","description":"页码，默认 1。"}}},
+    {"name":"issues","description":"列出指定仓库的 Issue。","parameters":{"owner":{"type":"string","description":"仓库所有者或组织名。","required":true},"repo":{"type":"string","description":"仓库名。","required":true},"state":{"type":"string","description":"open、closed 或 all；默认 open。"}}},
+    {"name":"pulls","description":"列出指定仓库的 Pull Request。","parameters":{"owner":{"type":"string","description":"仓库所有者或组织名。","required":true},"repo":{"type":"string","description":"仓库名。","required":true},"state":{"type":"string","description":"open、closed 或 all；默认 open。"}}},
+    {"name":"create_issue","description":"在指定仓库创建 Issue。","requiresApproval":true,"parameters":{"owner":{"type":"string","description":"仓库所有者或组织名。","required":true},"repo":{"type":"string","description":"仓库名。","required":true},"title":{"type":"string","description":"Issue 标题。","required":true},"body":{"type":"string","description":"Issue 正文。"}}},
+    {"name":"comment_issue","description":"评论指定仓库的 Issue 或 Pull Request。","requiresApproval":true,"parameters":{"owner":{"type":"string","description":"仓库所有者或组织名。","required":true},"repo":{"type":"string","description":"仓库名。","required":true},"number":{"type":"number","description":"Issue 或 Pull Request 编号。","required":true},"body":{"type":"string","description":"评论内容。","required":true}}},
+    {"name":"create_pull","description":"从已有分支创建 Pull Request。","requiresApproval":true,"parameters":{"owner":{"type":"string","description":"仓库所有者或组织名。","required":true},"repo":{"type":"string","description":"仓库名。","required":true},"title":{"type":"string","description":"Pull Request 标题。","required":true},"head":{"type":"string","description":"来源分支。","required":true},"base":{"type":"string","description":"目标分支。","required":true},"body":{"type":"string","description":"说明正文。"}}}
+  ]
+}
