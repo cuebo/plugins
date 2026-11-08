@@ -26,7 +26,7 @@ function api(method, path, body) {
 function compact(data) {
   if (Array.isArray(data)) return data.slice(0,30).map(compact);
   if (!data || typeof data !== "object") return data;
-  var keys = ["id","number","name","full_name","private","description","html_url","default_branch","title","state","body","created_at","updated_at","draft","merged","mergeable","head","base","user","login","comments","open_issues_count"];
+  var keys = ["id","number","name","full_name","private","description","html_url","default_branch","title","state","body","created_at","updated_at","draft","merged","mergeable","head","base","user","login","comments","open_issues_count","merged","sha","message"];
   var out = {};
   keys.forEach(function(k) { if (data[k] !== undefined) {
     if (k === "head" || k === "base") out[k] = data[k] && {ref:data[k].ref,sha:data[k].sha};
@@ -43,3 +43,8 @@ registerTool("pulls", function(raw) { var a=JSON.parse(raw); return api("GET",re
 registerTool("create_issue", function(raw) { var a=JSON.parse(raw); return api("POST",repoPath(a)+"/issues",{title:text(a.title,"标题",256,true),body:text(a.body,"正文",50000,false)}); });
 registerTool("comment_issue", function(raw) { var a=JSON.parse(raw); return api("POST",repoPath(a)+"/issues/"+number(a.number)+"/comments",{body:text(a.body,"评论",50000,true)}); });
 registerTool("create_pull", function(raw) { var a=JSON.parse(raw); return api("POST",repoPath(a)+"/pulls",{title:text(a.title,"标题",256,true),head:text(a.head,"来源分支",256,true),base:text(a.base,"目标分支",256,true),body:text(a.body,"正文",50000,false)}); });
+
+registerTool("issue", function(raw) { var a=JSON.parse(raw); return api("GET",repoPath(a)+"/issues/"+number(a.number)); });
+registerTool("pull", function(raw) { var a=JSON.parse(raw); return api("GET",repoPath(a)+"/pulls/"+number(a.number)); });
+registerTool("update_issue", function(raw) { var a=JSON.parse(raw), change={}; if (a.title != null) change.title=text(a.title,"标题",256,true); if (a.body != null) change.body=text(a.body,"正文",50000,false); if (a.state != null) { if (a.state!=="open" && a.state!=="closed") throw new Error("状态无效"); change.state=a.state; } if (!Object.keys(change).length) throw new Error("请指定要修改的字段"); return api("PATCH",repoPath(a)+"/issues/"+number(a.number),change); });
+registerTool("merge_pull", function(raw) { var a=JSON.parse(raw), method=a.merge_method||"merge"; if (["merge","squash","rebase"].indexOf(method)<0) throw new Error("合并方式无效"); var change={merge_method:method}; if (a.commit_title != null) change.commit_title=text(a.commit_title,"提交标题",256,true); return api("PUT",repoPath(a)+"/pulls/"+number(a.number)+"/merge",change); });

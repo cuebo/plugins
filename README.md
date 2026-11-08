@@ -7,7 +7,7 @@
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`demo/`](demo/) | 最小示例：向指定名字打招呼 | `https://github.com/cuebo/plugins/tree/main/demo` |
-| [`github/`](github/) | 查看仓库、Issue、PR，创建 Issue、评论和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
+| [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 
 ## 在 App 中安装
 
@@ -43,4 +43,4 @@ plugins/
 
 ## GitHub 插件
 
-导入 `github/` 后，在 Agent 中添加 GitHub 插件，配置 GitHub 访问令牌。建议使用权限尽量小的 fine-grained personal access token：读取仓库需要相应仓库读取权限；创建 Issue 和评论需要 Issues 写权限；创建 Pull Request 需要 Pull requests 写权限。第一次连接 `api.github.com` 时 App 会请求网络授权。创建 Issue、评论和创建 PR 会再次确认具体操作。令牌保存在 App 的插件私有配置中，不要写入仓库或对话。
+导入 `github/` 后，在 Agent 中添加 GitHub 插件，配置 GitHub 访问令牌。建议使用权限尽量小的 fine-grained personal access token：读取仓库需要相应仓库读取权限；创建 Issue 和评论需要 Issues 写权限；创建 Pull Request 需要 Pull requests 写权限。第一次连接 `api.github.com` 时 App 会请求网络授权。创建或修改 Issue、评论、创建或合并 PR 会再次确认具体操作。令牌保存在 App 的插件私有配置中，不要写入仓库或对话。
