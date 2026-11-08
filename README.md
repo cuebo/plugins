@@ -20,6 +20,8 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 
 仓库根目录有多个 `plugin.json`，不能作为单个插件包导入。App 会下载仓库 ZIP，再定位链接所指目录中的 `plugin.json` 和脚本文件。
 
+编写插件前先看 [插件脚本规范](docs/plugin-api.md)：列出可读取的数据、`host` API、系统能力、用户授权和运行限制。
+
 ## 新增插件
 
 在仓库根目录新建一个目录，例如 `my-plugin/`：
