@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "id": "demo",
+      "name": "Demo 示例",
+      "description": "一个最小的 cuebo 插件，验证导入和工具调用。",
+      "version": "1.0.0",
+      "path": "demo",
+      "toolCount": 1,
+      "networkHosts": []
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "description": "查看仓库、Issue 和 Pull Request，创建或修改 Issue、评论以及创建或合并 Pull Request。",
+      "version": "1.1.1",
+      "path": "github",
+      "toolCount": 10,
+      "networkHosts": [
+        "api.github.com"
+      ]
+    }
+  ]
+}
