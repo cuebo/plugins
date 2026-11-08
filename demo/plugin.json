@@ -1,0 +1,22 @@
+{
+  "id": "demo",
+  "name": "Demo 示例",
+  "description": "一个最小的 cuebo 插件，验证导入和工具调用。",
+  "pe": "用户要求测试 demo 插件或向某人打招呼时，调用 hello 工具；name 可省略。",
+  "version": "1.0.0",
+  "files": {
+    "main.js": ""
+  },
+  "tools": [
+    {
+      "name": "hello",
+      "description": "用指定名字生成一句问候语。",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "description": "要问候的名字；不填时使用“朋友”。"
+        }
+      }
+    }
+  ]
+}
