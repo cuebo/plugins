@@ -53,6 +53,7 @@ registerTool("greet", function (argsJSON) {
 | `host.request()` | 用户允许的公网 HTTPS 域名返回的状态码、响应正文等 | 首次访问未授权域名时用户确认 |
 | `host.call("browser.*", …)` | App **内置浏览器当前页面**的标题、URL、HTML、截图和操作结果 | 包声明 `wk_browser`，Agent 启用浏览器 |
 | `host.call("photo.*", …)` | 当前对话最近一条用户消息里的图片及编辑预览、操作结果 | 包声明 `brightroom_photo`，Agent 启用图片编辑 |
+| `host.ui("show"/"update", …)` | 在当前轮对话创建或更新 A2UI 卡片 | 包声明 `generative_ui`，Agent 启用界面展示 |
 | `host.choose()` | 用户在选择弹层提交的选项或取消结果 | 仅插件工具，且工具声明 `onSelect` 回调 |
 | Eino middleware | 对应钩子的消息、工具列表、调用参数或结果 | 包声明对应回调 |
 
@@ -130,7 +131,32 @@ var page = JSON.parse(host.call("browser.html", "{}"));
 return JSON.stringify({ok:!page.error,text:page.text,error:page.error});
 ```
 
-`browser.open` 是 App 内置浏览器操作，可以打开 HTTP/HTTPS 网页；它和 `host.request` 的独立 HTTPS 网络接口用途不同。当前 `host.call` **只接通浏览器与图片编辑**；声明其他能力名会被包校验拒绝。
+`browser.open` 是 App 内置浏览器操作，可以打开 HTTP/HTTPS 网页；它和 `host.request` 的独立 HTTPS 网络接口用途不同。当前 `host.call` **只接通浏览器与图片编辑**；界面展示使用单独的 `host.ui`。
+
+## 创建和更新对话卡片：`host.ui(action, cardJSON)`
+
+在 `plugin.json` 声明 `"capabilities": ["generative_ui"]`，当前 Agent 还须启用“界面展示”能力。插件工具和 Eino 回调都可以调用 `host.ui`；它只操作**当前轮对话里的卡片**，不能修改 App 其他页面。`cardJSON` 是 JSON 字符串，成功返回 JSON 字符串 `{"ok":true}`。展示卡片本身不弹授权窗。
+
+```js
+var card = {
+  id: "demo-card",
+  title: "Demo 卡片",
+  components: [
+    {id: "title", component: "Text", text: "Demo 卡片", variant: "h3"},
+    {id: "content", component: "Text", text: "初始内容", variant: "body"},
+    {id: "root", component: "Column", children: ["title", "content"]}
+  ]
+};
+var shown = JSON.parse(host.ui("show", JSON.stringify(card)));
+card.components[1].text = "更新后的内容";
+var updated = JSON.parse(host.ui("update", JSON.stringify(card)));
+```
+
+先 `show`，同一轮才能用相同 `id` 执行 `update`；后者替换**整张卡片**，不是局部节点补丁。重复 `show` 同一 ID 会报错，下一轮需重新 `show`。卡片 ID 在插件间隔离。`id` 以英文字母开头，后续可用英文字母、数字、下划线和连字符，最长 64 字符。`title` 必填，最多 80 字；可选的 `subtitle` 最多 200 字。
+
+`components` 是 A2UI v0.9 的扁平节点数组：每个节点有唯一 `id` 和 `component`，必须包含 `root`；`Row`、`Column`、`List` 用 `children` 引用节点 ID，`Card`、`Button` 用 `child` 引用节点 ID。支持 `Text`、`Image`、`Icon`、`Row`、`Column`、`List`、`Card`、`Divider`、`Button`、`CueboMetrics`、`CueboInfo`、`CueboLinkList`、`CueboChart`。最多 80 个节点，单次请求不超过 64 KB。`Button` 目前只能使用 `{event:{name:"open_url",context:{url:"https://example.com"}}}` 打开网页，点击不会回调插件；没有通用表单输入或任意原生页面控制。工具返回给模型的结果仍应包含有用的状态和数据，不能只返回 `{ok:true}`。
+
+仓库的 [`demo/`](../demo/) 实现了 `show_card` 和 `update_card` 两个可直接调用的工具；它们应在**同一轮**按先后顺序调用。
 
 ## 用户交互与操作确认
 
