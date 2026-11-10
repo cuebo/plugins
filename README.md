@@ -8,7 +8,6 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
-| [`demo/`](demo/) | 问候、创建与更新对话卡片 | `https://github.com/cuebo/plugins/tree/main/demo` |
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 
 ## 在 App 中安装
@@ -16,7 +15,6 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 1. 打开「能力管理 → 插件库」，点右上角添加按钮，选择「从网址下载」。
 2. 也可以直接在插件库顶部的仓库列表中选择插件并点「安装」；手动下载时粘贴上表中**插件目录**的链接。
 3. 查看插件内容并确认导入，然后在 Agent 的插件列表中添加该插件。
-4. 对 Agent 说「用 demo 插件向小明打招呼」。正常返回会包含 `你好，小明！`。要测试卡片，先给 Agent 启用“界面展示”能力，再说「用 demo 插件展示一张写着测试成功的卡片，然后把内容更新成更新成功」。
 
 仓库根目录有多个 `plugin.json`，不能作为单个插件包导入。App 会下载仓库 ZIP，再定位链接所指目录中的 `plugin.json` 和脚本文件。
 
@@ -29,9 +27,6 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 ```text
 plugins/
 ├── README.md
-├── demo/
-│   ├── plugin.json
-│   └── main.js
 └── my-plugin/
     ├── plugin.json
     ├── main.js
