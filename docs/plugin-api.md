@@ -156,7 +156,7 @@ var updated = JSON.parse(host.ui("update", JSON.stringify(card)));
 
 `components` 是 A2UI v0.9 的扁平节点数组：每个节点有唯一 `id` 和 `component`，必须包含 `root`；`Row`、`Column`、`List` 用 `children` 引用节点 ID，`Card`、`Button` 用 `child` 引用节点 ID。支持 `Text`、`Image`、`Icon`、`Row`、`Column`、`List`、`Card`、`Divider`、`Button`、`CueboMetrics`、`CueboInfo`、`CueboLinkList`、`CueboChart`。最多 80 个节点，单次请求不超过 64 KB。`Button` 目前只能使用 `{event:{name:"open_url",context:{url:"https://example.com"}}}` 打开网页，点击不会回调插件；没有通用表单输入或任意原生页面控制。工具返回给模型的结果仍应包含有用的状态和数据，不能只返回 `{ok:true}`。
 
-仓库的 [`demo/`](../demo/) 实现了 `show_card` 和 `update_card` 两个可直接调用的工具；它们应在**同一轮**按先后顺序调用。
+展示和更新同一张卡片时，应在同一轮按先后顺序调用 `host.ui("show", ...)` 和 `host.ui("update", ...)`，并使用相同的卡片 ID。
 
 ## 用户交互与操作确认
 
