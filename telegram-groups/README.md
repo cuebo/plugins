@@ -16,7 +16,7 @@
 | `reply_message` | 根据读取结果的 `message_id` 回复；可指定 `message_thread_id` 发到话题 | Bot 可在群中发言 |
 | `send_poll` | 普通投票；选项以每行一项提供，支持匿名与多选 | Bot 可在群中发投票 |
 | `pin_message`、`unpin_message`、`delete_message` | 置顶、取消置顶、删除指定消息 | Bot 具有相应管理员权限；Telegram 对删除消息有时间限制 |
-| `restrict_member`、`unrestrict_member`、`ban_member`、`unban_member` | 限制发言、解除限制、封禁和解封 | Bot 具有管理成员权限；限制发言只适用于超级群 |
+| `restrict_member`、`unrestrict_member`、`ban_member`、`unban_member` | 限制发言、解除限制、封禁和解封 | Bot 具有管理成员权限；限制发言只适用于超级群。Telegram 在超级群封禁时会清除该成员的历史消息 |
 | `list_join_requests`、`approve_join_request`、`decline_join_request` | 查看已收到的入群申请并处理 | Bot 具有邀请用户权限；先调用 `read_new_messages` 收取申请 |
 
 所有写操作都声明了 `requiresApproval`，App 在调用前请求确认。入群申请在当前 Agent 的插件数据中最多保存 50 条，处理成功后移除。`read_new_messages` 会订阅 `message` 和 `chat_join_request` 两类更新；这个 Bot 不应同时被其他客户端消费更新。
