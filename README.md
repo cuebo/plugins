@@ -9,7 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
-| [`telegram-groups/`](telegram-groups/) | 读取 Telegram 群组新消息、选择群组，经用户确认后发文字 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
+| [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
 
@@ -47,4 +47,4 @@ plugins/
 
 ## Telegram 群消息插件
 
-导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；发送工具需要选中的群组 Chat ID 与正文，App 会在发送前请求确认。Bot 需要相应的群组读取与发言权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
+导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；回复、投票和群管理工具会在操作前请求确认。管理员操作需要给 Bot 相应权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。

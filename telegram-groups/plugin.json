@@ -1,9 +1,9 @@
 {
   "id": "telegram-groups",
   "name": "Telegram 群消息",
-  "description": "通过 Telegram Bot API 读取群组新消息，并经用户确认后向群组发送文字",
-  "pe": "查看群组新消息时调用 read_new_messages，只报告实际返回的消息。用户要向群组发消息且未指定目标时，先调用 choose_group 让用户从已发现的群中选择；没有群可选时先调用 read_new_messages 发现群。选中后用返回的 chat_id 和用户确认过的完整正文调用 send_message，App 会再次确认发送。网络结果不确定时不要自动重试，以免重复发送。",
-  "version": "1.1.0",
+  "description": "读取群消息、选群、回复和投票，并在确认后管理群消息与成员",
+  "pe": "查看新消息用 read_new_messages；未指定群时先用 choose_group。发送、回复、投票和管理员操作必须基于用户明确要求，并在 App 确认后执行。回复使用读取结果中的 chat_id、message_id 和可选的 message_thread_id。发送和回复默认纯文本；用户要求格式时可设 format=MarkdownV2，但必须使用 Telegram MarkdownV2 语法并转义普通特殊符号，不能直接提交普通 Markdown。群管理先用 get_group_info 或 get_member_status 核对目标。网络结果不确定时不要自动重试写操作。Bot Token 无法补读旧历史。",
+  "version": "1.2.0",
   "files": {"main.js": "main.js"},
   "networkHosts": ["api.telegram.org"],
   "config": [
@@ -11,14 +11,42 @@
     {"id": "chat_id", "title": "群组 Chat ID（留空读取所有群组）", "type": "text"}
   ],
   "tools": [
-    {"name": "read_new_messages", "description": "读取当前机器人收到的群组新消息，每次最多返回 30 条"},
+    {"name": "read_new_messages", "description": "读取当前机器人收到的群组新消息和入群申请，每次最多返回 30 条消息"},
     {"name": "choose_group", "description": "在 App 中让用户从机器人近期发现的群组中选择一个", "onSelect": "group_selected"},
+    {"name": "get_group_info", "description": "查看群标题、描述、成员数和管理员",
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}}},
+    {"name": "get_member_status", "description": "查看指定用户在群中的身份与权限",
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "user_id": {"type": "string", "description": "用户 ID", "required": true}}},
+    {"name": "list_join_requests", "description": "查看插件已收到且尚未处理的入群申请"},
     {"name": "send_message", "description": "向指定 Telegram 群组发送文字消息，调用前必须经用户确认",
       "requiresApproval": true,
       "parameters": {
         "chat_id": {"type": "string", "description": "目标群的数字 Chat ID，例如 -1001234567890", "required": true},
-        "text": {"type": "string", "description": "要发送的完整文字，最多 4096 字符", "required": true}
+        "text": {"type": "string", "description": "要发送的完整文字，最多 4096 字符", "required": true},
+        "format": {"type": "string", "description": "plain（默认）或 MarkdownV2；后者须符合 Telegram 转义规则"}
       }
-    }
+    },
+    {"name": "reply_message", "description": "回复群内指定消息，可在话题内发送", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "message_id": {"type": "number", "description": "要回复的消息 ID", "required": true}, "message_thread_id": {"type": "number", "description": "可选的话题 ID"}, "text": {"type": "string", "description": "回复正文", "required": true}, "format": {"type": "string", "description": "plain（默认）或 MarkdownV2"}}},
+    {"name": "send_poll", "description": "向群组发起普通投票", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "question": {"type": "string", "description": "投票问题，最多 300 字", "required": true}, "options": {"type": "string", "description": "每行一个选项，2 至 12 项", "required": true}, "is_anonymous": {"type": "boolean", "description": "是否匿名，默认 true"}, "allows_multiple_answers": {"type": "boolean", "description": "是否允许多选"}, "message_thread_id": {"type": "number", "description": "可选的话题 ID"}}},
+    {"name": "pin_message", "description": "置顶群消息", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "message_id": {"type": "number", "description": "消息 ID", "required": true}}},
+    {"name": "unpin_message", "description": "取消置顶指定群消息", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "message_id": {"type": "number", "description": "消息 ID", "required": true}}},
+    {"name": "delete_message", "description": "删除指定群消息", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "message_id": {"type": "number", "description": "消息 ID", "required": true}}},
+    {"name": "restrict_member", "description": "禁止群成员发言，可指定解除时间", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "超级群 Chat ID", "required": true}, "user_id": {"type": "string", "description": "用户 ID", "required": true}, "until_date": {"type": "number", "description": "解除时间的 Unix 秒；省略表示长期限制"}}},
+    {"name": "unrestrict_member", "description": "解除群成员发言限制", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "超级群 Chat ID", "required": true}, "user_id": {"type": "string", "description": "用户 ID", "required": true}}},
+    {"name": "ban_member", "description": "将用户移出并封禁群组", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "user_id": {"type": "string", "description": "用户 ID", "required": true}}},
+    {"name": "unban_member", "description": "解除已封禁用户的入群限制", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "user_id": {"type": "string", "description": "用户 ID", "required": true}}},
+    {"name": "approve_join_request", "description": "批准已收到的入群申请", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "user_id": {"type": "string", "description": "申请者用户 ID", "required": true}}},
+    {"name": "decline_join_request", "description": "拒绝已收到的入群申请", "requiresApproval": true,
+      "parameters": {"chat_id": {"type": "string", "description": "群组 Chat ID", "required": true}, "user_id": {"type": "string", "description": "申请者用户 ID", "required": true}}}
   ]
 }

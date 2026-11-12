@@ -15,10 +15,10 @@
     {
       "id": "telegram-groups",
       "name": "Telegram 群消息",
-      "description": "通过 Telegram Bot API 读取群组新消息，并经用户确认后向群组发送文字",
-      "version": "1.1.0",
+      "description": "读取群消息、选群、回复和投票，并在确认后管理群消息与成员",
+      "version": "1.2.0",
       "path": "telegram-groups",
-      "toolCount": 3,
+      "toolCount": 17,
       "networkHosts": [
         "api.telegram.org"
       ]
