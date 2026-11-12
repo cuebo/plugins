@@ -9,6 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
+| [`image-upload/`](image-upload/) | 将当前消息的图片上传到用户配置的 HTTPS 服务 | `https://github.com/cuebo/plugins/tree/main/image-upload` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
@@ -37,7 +38,7 @@ plugins/
 
 `plugin.json` 至少声明唯一的 `id`、`name`、`version`、`files` 和 `tools`。`files` 中写相对插件目录的脚本路径；仓库文件里的值可以留空，App 导入时会读取对应脚本并填入内容。`main.js` 用 `registerTool(name, function(argsJSON) { ... })` 注册与 `tools` 声明同名的工具，返回字符串；建议返回 JSON 字符串。可选的 `pe` 是注入 Agent 的插件使用说明，只写调用时需要的内容。
 
-插件脚本运行在受限 JavaScript 环境中。可使用 `host.config`、`host.storage`、`host.choose`、`host.request`，以及在声明并启用对应能力后使用 `host.call` 调用浏览器或图片能力。声明 `generative_ui` 且 Agent 启用界面展示后，可用 `host.ui("show", JSON.stringify({id:"demo",title:"标题",components:[{id:"text",component:"Text",text:"内容"},{id:"root",component:"Column",children:["text"]}]}))` 展示 A2UI 卡片；同一轮用相同 ID 的 `host.ui("update", JSON.stringify({...}))` 更新。界面展示无需逐次弹窗授权，宿主会验证组件结构、大小及链接动作。网络请求通过 App 的 HTTPS 接口，首次访问未授权域名时自动请用户确认；同意后保存到该 Agent 的插件白名单。脚本不能直接使用 Node.js 或文件系统。不要把密钥写进仓库；需要密钥时使用 `config` 的 `secret` 字段，由用户在 App 中配置。
+插件脚本运行在受限 JavaScript 环境中。可使用 `host.config`、`host.storage`、`host.choose`、`host.request`、`host.attachments`，以及在声明并启用对应能力后使用 `host.call` 调用浏览器或图片能力。声明 `generative_ui` 且 Agent 启用界面展示后，可用 `host.ui("show", JSON.stringify({id:"demo",title:"标题",components:[{id:"text",component:"Text",text:"内容"},{id:"root",component:"Column",children:["text"]}]}))` 展示 A2UI 卡片；同一轮用相同 ID 的 `host.ui("update", JSON.stringify({...}))` 更新。界面展示无需逐次弹窗授权，宿主会验证组件结构、大小及链接动作。网络请求通过 App 的 HTTPS 接口，首次访问未授权域名时自动请用户确认；同意后保存到该 Agent 的插件白名单。脚本不能直接使用 Node.js 或文件系统。不要把密钥写进仓库；需要密钥时使用 `config` 的 `secret` 字段，由用户在 App 中配置。
 
 更新插件时递增 `version`，并在 App 中重新导入对应目录链接。公开插件请保持目录和 `id` 稳定，避免用户重新导入后出现两个不同插件。
 
@@ -48,3 +49,7 @@ plugins/
 ## Telegram 群消息插件
 
 导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；回复、投票和群管理工具会在操作前请求确认。管理员操作需要给 Bot 相应权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
+
+## 图片上传示例
+
+导入 [`image-upload/`](image-upload/) 后，配置 HTTPS 上传地址；需要鉴权时填写 Token、请求头和前缀。用户在当前消息附图并要求上传时，插件会列出本轮图片，再由 App 展示图片和目标地址供确认。详见[插件说明](image-upload/README.md)。

@@ -51,13 +51,14 @@ registerTool("greet", function (argsJSON) {
 | `host.config()` | 当前 **Agent 的这个插件**保存的配置值，包括用户填写的密钥 | 包内声明 `config`；用户保存配置 |
 | `host.storage()` | 当前插件与当前 Agent 的私有 JSON 键值 | 使用插件自己的键；不能读别的插件或 Agent |
 | `host.request()` | 用户允许的公网 HTTPS 域名返回的状态码、响应正文等 | 首次访问未授权域名时用户确认 |
+| `host.attachments()` | 本轮用户消息的图片引用；经确认后可将指定图片上传到公网服务 | 上传前确认域名、图片和目标地址 |
 | `host.call("browser.*", …)` | App **内置浏览器当前页面**的标题、URL、HTML、截图和操作结果 | 包声明 `wk_browser`，Agent 启用浏览器 |
 | `host.call("photo.*", …)` | 当前对话最近一条用户消息里的图片及编辑预览、操作结果 | 包声明 `brightroom_photo`，Agent 启用图片编辑 |
 | `host.ui("show"/"update", …)` | 在当前轮对话创建或更新 A2UI 卡片 | 包声明 `generative_ui`，Agent 启用界面展示 |
 | `host.choose()` | 用户在选择弹层提交的选项或取消结果 | 仅插件工具，且工具声明 `onSelect` 回调 |
 | Eino middleware | 对应钩子的消息、工具列表、调用参数或结果 | 包声明对应回调 |
 
-普通工具不会自动收到完整聊天记录；但声明了 Eino middleware 的插件，其部分回调会收到本轮传给模型的 `messages`，可能包含对话上下文，应按敏感数据处理。插件目前**没有直接接口**读取其他插件数据、系统文件、剪切板、位置、日历、HomeKit、SSH 终端或运行环境命令。不能直接使用 Node.js、`require`、`fetch`、文件系统或任意系统命令。浏览器数据来自 cuebo 的内置浏览器，不是 Safari 或其他浏览器的登录数据。
+普通工具不会自动收到完整聊天记录；但声明了 Eino middleware 的插件，其部分回调会收到本轮传给模型的 `messages`，可能包含对话上下文，应按敏感数据处理。`host.attachments` 只列出本轮图片引用，不返回文件路径或原始内容。插件目前**没有直接接口**读取其他插件数据、系统文件、剪切板、位置、日历、HomeKit、SSH 终端或运行环境命令。不能直接使用 Node.js、`require`、`fetch`、文件系统或任意系统命令。浏览器数据来自 cuebo 的内置浏览器，不是 Safari 或其他浏览器的登录数据。
 
 ## 配置：`host.config()`
 
@@ -132,6 +133,22 @@ return JSON.stringify({ok:!page.error,text:page.text,error:page.error});
 ```
 
 `browser.open` 是 App 内置浏览器操作，可以打开 HTTP/HTTPS 网页；它和 `host.request` 的独立 HTTPS 网络接口用途不同。当前 `host.call` **只接通浏览器与图片编辑**；界面展示使用单独的 `host.ui`。
+
+## 本轮图片：`host.attachments()`
+
+`host.attachments("list", "{}")` 返回当前用户消息里的图片引用，包含供后续使用的 `id`，不包含文件路径或图片内容。上传时调用：
+
+```js
+var images = JSON.parse(host.attachments("list", "{}"));
+var result = JSON.parse(host.attachments("upload", JSON.stringify({
+  attachmentID: images[0].id,
+  url: "https://upload.example.com/images",
+  fieldName: "image",
+  headers: {Authorization: "Bearer " + token}
+})));
+```
+
+上传目标须是公网 HTTP 或 HTTPS 地址；传递 Token 时应使用 HTTPS。App 先确认域名授权，再展示图片和完整目标地址供用户逐次确认。确认后宿主以 `multipart/form-data` 发送 JPEG 图片，单张最多 20 MB；插件只得到状态码和响应正文，不持有文件副本。`headers` 可传自定义鉴权请求头；不能设置 `Host`、`Cookie`、`Content-Type` 等受保护请求头。图片由所属会话管理，删除会话时按原有生命周期清理。参考[图片上传示例](../image-upload/)。
 
 ## 创建和更新对话卡片：`host.ui(action, cardJSON)`
 
