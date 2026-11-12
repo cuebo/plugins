@@ -9,6 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
+| [`telegram-groups/`](telegram-groups/) | 读取 Telegram 群组新消息、选择群组，经用户确认后发文字 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
 
@@ -43,3 +44,7 @@ plugins/
 ## GitHub 插件
 
 导入 `github/` 后，在 Agent 中添加 GitHub 插件，配置 GitHub 访问令牌。建议使用权限尽量小的 fine-grained personal access token：读取仓库需要相应仓库读取权限；创建 Issue 和评论需要 Issues 写权限；创建 Pull Request 需要 Pull requests 写权限。第一次连接 `api.github.com` 时 App 会请求网络授权。创建或修改 Issue、评论、创建或合并 PR 会再次确认具体操作。令牌保存在 App 的插件私有配置中，不要写入仓库或对话。
+
+## Telegram 群消息插件
+
+导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；发送工具需要选中的群组 Chat ID 与正文，App 会在发送前请求确认。Bot 需要相应的群组读取与发言权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。

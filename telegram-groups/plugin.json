@@ -1,0 +1,24 @@
+{
+  "id": "telegram-groups",
+  "name": "Telegram 群消息",
+  "description": "通过 Telegram Bot API 读取群组新消息，并经用户确认后向群组发送文字",
+  "pe": "查看群组新消息时调用 read_new_messages，只报告实际返回的消息。用户要向群组发消息且未指定目标时，先调用 choose_group 让用户从已发现的群中选择；没有群可选时先调用 read_new_messages 发现群。选中后用返回的 chat_id 和用户确认过的完整正文调用 send_message，App 会再次确认发送。网络结果不确定时不要自动重试，以免重复发送。",
+  "version": "1.1.0",
+  "files": {"main.js": "main.js"},
+  "networkHosts": ["api.telegram.org"],
+  "config": [
+    {"id": "bot_token", "title": "Bot Token", "type": "secret", "required": true},
+    {"id": "chat_id", "title": "群组 Chat ID（留空读取所有群组）", "type": "text"}
+  ],
+  "tools": [
+    {"name": "read_new_messages", "description": "读取当前机器人收到的群组新消息，每次最多返回 30 条"},
+    {"name": "choose_group", "description": "在 App 中让用户从机器人近期发现的群组中选择一个", "onSelect": "group_selected"},
+    {"name": "send_message", "description": "向指定 Telegram 群组发送文字消息，调用前必须经用户确认",
+      "requiresApproval": true,
+      "parameters": {
+        "chat_id": {"type": "string", "description": "目标群的数字 Chat ID，例如 -1001234567890", "required": true},
+        "text": {"type": "string", "description": "要发送的完整文字，最多 4096 字符", "required": true}
+      }
+    }
+  ]
+}
