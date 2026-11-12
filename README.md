@@ -9,7 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
-| [`image-upload/`](image-upload/) | 将当前消息的图片上传到用户配置的 HTTPS 服务 | `https://github.com/cuebo/plugins/tree/main/image-upload` |
+| [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
@@ -50,6 +50,6 @@ plugins/
 
 导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；回复、投票和群管理工具会在操作前请求确认。管理员操作需要给 Bot 相应权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
 
-## 图片上传示例
+## Imgur 插件
 
-导入 [`image-upload/`](image-upload/) 后，配置 HTTPS 上传地址；需要鉴权时填写 Token、请求头和前缀。用户在当前消息附图并要求上传时，插件会列出本轮图片，再由 App 展示图片和目标地址供确认。详见[插件说明](image-upload/README.md)。
+导入 [`imgur/`](imgur/) 后，在 Agent 的插件配置中填写 Imgur Client ID。用户在当前消息附带一张图片并明确要求上传时，App 会展示图片和目标地址供确认；成功后返回分享直链。详见[插件说明](imgur/README.md)。

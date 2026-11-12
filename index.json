@@ -13,13 +13,15 @@
       ]
     },
     {
-      "id": "image-upload",
-      "name": "图片上传示例",
-      "description": "将本轮聊天中附带的第一张图片上传到配置的服务",
+      "id": "imgur",
+      "name": "Imgur",
+      "description": "将当前聊天消息中的图片上传到 Imgur，获取分享直链",
       "version": "1.0.0",
-      "path": "image-upload",
+      "path": "imgur",
       "toolCount": 1,
-      "networkHosts": []
+      "networkHosts": [
+        "api.imgur.com"
+      ]
     },
     {
       "id": "telegram-groups",

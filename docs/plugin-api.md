@@ -148,7 +148,7 @@ var result = JSON.parse(host.attachments("upload", JSON.stringify({
 })));
 ```
 
-上传目标须是公网 HTTP 或 HTTPS 地址；传递 Token 时应使用 HTTPS。App 先确认域名授权，再展示图片和完整目标地址供用户逐次确认。确认后宿主以 `multipart/form-data` 发送 JPEG 图片，单张最多 20 MB；插件只得到状态码和响应正文，不持有文件副本。`headers` 可传自定义鉴权请求头；不能设置 `Host`、`Cookie`、`Content-Type` 等受保护请求头。图片由所属会话管理，删除会话时按原有生命周期清理。参考[图片上传示例](../image-upload/)。
+上传目标须是公网 HTTP 或 HTTPS 地址；传递 Token 时应使用 HTTPS。App 先确认域名授权，再展示图片和完整目标地址供用户逐次确认。确认后宿主以 `multipart/form-data` 发送 JPEG 图片，单张最多 20 MB；插件只得到状态码和响应正文，不持有文件副本。`headers` 可传自定义鉴权请求头；不能设置 `Host`、`Cookie`、`Content-Type` 等受保护请求头。图片由所属会话管理，删除会话时按原有生命周期清理。参考[Imgur 插件](../imgur/)。
 
 ## 创建和更新对话卡片：`host.ui(action, cardJSON)`
 

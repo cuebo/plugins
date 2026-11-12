@@ -1,0 +1,18 @@
+{
+  "id": "imgur",
+  "name": "Imgur",
+  "description": "将当前聊天消息中的图片上传到 Imgur，获取分享直链",
+  "pe": "仅在用户明确要求将图片上传到 Imgur 或通过 Imgur 分享时调用 upload_image。请用户在当前消息中附带一张图片。上传由 Cuebo 展示图片和目标地址供用户确认。成功时提供返回的 link，失败时说明错误，不自动重试。请用户在插件配置页填写 Client ID。",
+  "version": "1.0.0",
+  "files": {"main.js": "main.js"},
+  "networkHosts": ["api.imgur.com"],
+  "tools": [
+    {
+      "name": "upload_image",
+      "description": "使用 Imgur Client ID 匿名上传当前消息中的一张图片，返回图片 ID 和分享直链"
+    }
+  ],
+  "config": [
+    {"id": "client_id", "title": "Imgur Client ID", "type": "secret", "required": true}
+  ]
+}
