@@ -44,10 +44,19 @@ registerTool("show_metrics", function(raw) {
     if ((change && ["up","down","flat"].indexOf(trend) < 0) || (!change && trend)) throw new Error("趋势无效");
     return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),change:change,trend:trend};
   });
-  return showContent("指标",[{id:"metrics",stack:{children:items.map(function(item,index) {
-    var accent = item.trend === "up" ? "PLUGIN_ACCENT_GREEN" : item.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
-    return {id:"metric-" + index,value:{title:item.label,subtitle:item.change,value:{text:item.value},appearance:{accent:accent}}};
-  })}}],items.length);
+  return showContent("指标",[{id:"metrics",grid:{columns:2,spacing:10,
+    appearance:{container:"PLUGIN_CONTAINER_STYLE_NONE"},
+    children:items.map(function(item,index) {
+      var id = "metric-" + index;
+      var accent = item.trend === "up" ? "PLUGIN_ACCENT_GREEN" : item.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
+      var children = [
+        {id:id + "-label",text:{text:item.label,style:"PLUGIN_TEXT_STYLE_CAPTION"}},
+        {id:id + "-value",text:{text:item.value,style:"PLUGIN_TEXT_STYLE_VALUE"}}
+      ];
+      if (item.change) children.push({id:id + "-change",badge:{text:item.change,appearance:{accent:accent}}});
+      return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},children:children}};
+    })
+  }}],items.length);
 });
 
 function registerChart(name, kind) {
