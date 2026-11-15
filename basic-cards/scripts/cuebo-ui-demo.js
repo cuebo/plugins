@@ -1,7 +1,5 @@
-const MYSERVERS_LOGO_URL = "https://myservers.plus/images/logo.png";
-
-function myServersIcon(systemName) {
-  return { systemName: systemName || "shippingbox.fill", url: MYSERVERS_LOGO_URL };
+function demoIcon(systemName) {
+  return { systemName: systemName || "shippingbox.fill" };
 }
 
 function demoLabel(ctx) {
@@ -363,8 +361,8 @@ function demoComponentCatalog(ctx, label) {
     stateBlock: {
       kind: "PLUGIN_STATE_KIND_EMPTY",
       title: "自定义状态",
-      message: "状态组件支持 HTTP/HTTPS URL 图标，并在加载失败时回退到 SF Symbol。",
-      appearance: { accent: demoAccent(ctx), iconSource: myServersIcon("server.rack") }
+      message: "状态组件可展示图标，并在不同状态下保持一致布局。",
+      appearance: { accent: demoAccent(ctx), iconSource: demoIcon("server.rack") }
     }
   };
   const codeBlockComponent = {
@@ -373,7 +371,7 @@ function demoComponentCatalog(ctx, label) {
   };
   const iconComponent = {
     id: "render-icon",
-    icon: { appearance: { accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_LARGE", iconSource: myServersIcon("shippingbox.fill") } }
+    icon: { appearance: { accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_LARGE", iconSource: demoIcon("shippingbox.fill") } }
   };
   const imageComponent = {
     id: "render-image",
@@ -532,7 +530,7 @@ globalThis.dashboard = function(ctx) {
           },
           appearance: {
             accent: demoAccent(ctx),
-            iconSource: myServersIcon("shippingbox.fill"),
+            iconSource: demoIcon("shippingbox.fill"),
             hideBackground: true
           },
           onTap: { plugin: { actionId: "openDetail" } }
@@ -552,7 +550,7 @@ globalThis.widget = function(ctx) {
         axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL",
         spacing: 8,
         children: [
-          { id: "widget-icon", icon: { appearance: { accent: demoAccent(ctx), iconSource: myServersIcon("shippingbox.fill") } } },
+          { id: "widget-icon", icon: { appearance: { accent: demoAccent(ctx), iconSource: demoIcon("shippingbox.fill") } } },
           { id: "widget-title", text: { text: label + " 在线", style: "PLUGIN_TEXT_STYLE_TITLE" } },
           { id: "widget-state", badge: { text: "健康", value: { status: "PLUGIN_STATUS_HEALTHY" }, appearance: { accent: "PLUGIN_ACCENT_GREEN" } } }
         ]

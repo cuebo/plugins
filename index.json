@@ -4,8 +4,8 @@
     {
       "id": "basic-cards",
       "name": "基础卡片",
-      "description": "在对话中展示五种基础卡片，插件界面展示 MyServers 的 35 个组件示例。",
-      "version": "1.1.0",
+      "description": "在对话中展示五种基础卡片，插件界面展示 35 个组件示例。",
+      "version": "1.2.0",
       "path": "basic-cards",
       "toolCount": 5,
       "networkHosts": []
@@ -42,15 +42,6 @@
       "networkHosts": [
         "api.telegram.org"
       ]
-    },
-    {
-      "id": "ui-showcase",
-      "name": "界面组件演示",
-      "description": "展示插件页面和对话卡片中的原生组件、二级页、弹层及固定动作",
-      "version": "1.0.0",
-      "path": "ui-showcase",
-      "toolCount": 1,
-      "networkHosts": []
     }
   ]
 }

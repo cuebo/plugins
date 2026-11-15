@@ -171,11 +171,11 @@ var updated = JSON.parse(host.ui("update", JSON.stringify(card)));
 
 先 `show`，同一轮才能用相同 `id` 执行 `update`；后者替换**整张卡片**，不是局部节点补丁。重复 `show` 同一 ID 会报错，下一轮需重新 `show`。卡片 ID 在插件间隔离。`id` 以英文字母开头，后续可用英文字母、数字、下划线和连字符，最长 64 字符。`title` 必填，最多 80 字；可选的 `subtitle` 最多 200 字。
 
-`components` 是原生组件的扁平节点数组：每个节点有唯一 `id` 和 `component`，必须包含 `root`；容器通过 `children` 或 `child` 引用节点 ID。当前支持 34 种组件，完整示例见[界面组件演示插件](../ui-showcase/)。最多 80 个节点，单次请求不超过 64 KB。`Button` 等交互组件的 `action` 可为 `{openURL:"https://example.com"}`、`{navigate:{surface:"detail",route:"status"}}`、`{navigate:{surface:"sheet",route:"help"}}` 或 `{plugin:{actionID:"refresh",params:{}}}`。布局和动作由插件脚本固定定义，工具返回给模型的结果仍应包含有用的状态和数据，不能只返回 `{ok:true}`。
+`components` 是原生组件的扁平节点数组：每个节点有唯一 `id` 和 `component`，必须包含 `root`；容器通过 `children` 或 `child` 引用节点 ID。当前支持 34 种组件，最多 80 个节点，单次请求不超过 64 KB。`Button` 等交互组件的 `action` 可为 `{openURL:"https://example.com"}`、`{navigate:{surface:"detail",route:"status"}}`、`{navigate:{surface:"sheet",route:"help"}}` 或 `{plugin:{actionID:"refresh",params:{}}}`。布局和动作由插件脚本固定定义，工具返回给模型的结果仍应包含有用的状态和数据，不能只返回 `{ok:true}`。
 
 插件自身的入口页面在 `plugin.json` 设置 `"ui":true`，并在脚本中定义 `dashboard(ctx)`、`detail(ctx)`、可选的 `sheet(ctx)` 以及 `actions` 对象。页面函数返回 `{title,components}`，动作函数接收 `ctx` 并返回 `{effects:[...]}`；效果可为 `toast`、`navigate`、`refresh` 或 `replace`。`ctx` 含 `surface`、`route`、`actionId` 和 `params`。页面运行时也可用 `host.config()`、`host.storage()` 和 `host.request()`，数据仍按 Agent 隔离。插件入口与对话卡片使用同一套原生组件和动作处理。
 
-已有 MyServers 插件可以声明 `"uiProtocol":"myservers-v1"`，保留原来的嵌套组件结构（例如 `{id:"title",text:{text:"演示"}}`），以及 `onTap` / `onChange` / `onSubmit`、`{plugin:{actionId:"..."}}`、`{navigate:{surface:"sheet",route:"...",detents:["medium","large"]}}` 和 `replaceComponents`。此模式的 `dashboard/detail/sheet` 可继续读取 `ctx.config`；对话中的 `host.ui` 也接受同一组件结构。插件页与对话卡片都使用 cuebo 的 MyServers 协议渲染器。完整组件演示见 App 内置的[基础卡片插件](../basic-cards/)；其中的 MyServers 演示脚本保持原样。
+使用 Cuebo 组件协议的插件声明 `"uiProtocol":"cuebo-v1"`，以嵌套组件结构（例如 `{id:"title",text:{text:"演示"}}`）定义页面，支持 `onTap` / `onChange` / `onSubmit`、`{plugin:{actionId:"..."}}`、`{navigate:{surface:"sheet",route:"...",detents:["medium","large"]}}` 和 `replaceComponents`。`dashboard/detail/sheet` 可读取 `ctx.config`；对话中的 `host.ui` 也接受同一组件结构。插件页与对话卡片使用相同的组件渲染器。完整示例见 App 内置的[基础卡片插件](../basic-cards/)。
 
 展示和更新同一张卡片时，应在同一轮按先后顺序调用 `host.ui("show", ...)` 和 `host.ui("update", ...)`，并使用相同的卡片 ID。
 

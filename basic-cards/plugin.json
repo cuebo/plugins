@@ -1,14 +1,14 @@
 {
   "id": "basic-cards",
   "name": "基础卡片",
-  "description": "在对话中展示五种基础卡片，插件界面展示 MyServers 的 35 个组件示例。",
+  "description": "在对话中展示五种基础卡片，插件界面展示 35 个组件示例。",
   "pe": "需要用卡片呈现真实的结构化结果时，选择基础卡片插件的对应工具；只传内容数据，不生成布局或动作。工具返回 shown:true 才能说卡片已展示。",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "ui": true,
-  "uiProtocol": "myservers-v1",
+  "uiProtocol": "cuebo-v1",
   "files": {
     "main.js": "main.js",
-    "scripts/myservers-demo.js": "scripts/myservers-demo.js"
+    "scripts/cuebo-ui-demo.js": "scripts/cuebo-ui-demo.js"
   },
   "tools": [
     {
