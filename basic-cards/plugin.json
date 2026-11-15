@@ -3,7 +3,7 @@
   "name": "基础卡片",
   "description": "在对话中展示信息、链接列表、指标、饼图、折线图和柱状图。",
   "pe": "需要用卡片呈现真实的结构化结果时，选择基础卡片插件的对应工具；只传内容数据，不生成布局或动作。工具返回 shown:true 才能说卡片已展示。",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "ui": true,
   "files": {
     "main.js": "main.js"
@@ -159,22 +159,12 @@
     },
     {
       "name": "show_pie_chart",
-      "description": "展示饼图。输入标题、说明和至少 2 个真实数据点。",
+      "description": "展示饼图，标题居中放在图下方。输入标题和至少 2 个真实数据点。",
       "parameters": {
         "title": {
           "type": "string",
-          "description": "卡片标题，最多 80 字",
+          "description": "显示在饼图下方的标题，最多 80 字",
           "required": true
-        },
-        "subtitle": {
-          "type": "string",
-          "description": "卡片说明，最多 200 字",
-          "required": true
-        },
-        "image_url": {
-          "type": "string",
-          "description": "可选 HTTP/HTTPS 图片地址",
-          "required": false
         },
         "items": {
           "type": "array",
@@ -200,22 +190,12 @@
     },
     {
       "name": "show_line_chart",
-      "description": "展示折线图。输入标题、说明和至少 2 个真实数据点。",
+      "description": "展示折线图，标题居中放在图下方。输入标题和至少 2 个真实数据点。",
       "parameters": {
         "title": {
           "type": "string",
-          "description": "卡片标题，最多 80 字",
+          "description": "显示在折线图下方的标题，最多 80 字",
           "required": true
-        },
-        "subtitle": {
-          "type": "string",
-          "description": "卡片说明，最多 200 字",
-          "required": true
-        },
-        "image_url": {
-          "type": "string",
-          "description": "可选 HTTP/HTTPS 图片地址",
-          "required": false
         },
         "items": {
           "type": "array",
