@@ -33,6 +33,15 @@
       "networkHosts": [
         "api.telegram.org"
       ]
+    },
+    {
+      "id": "ui-showcase",
+      "name": "界面组件演示",
+      "description": "展示插件页面和对话卡片中的原生组件、二级页、弹层及固定动作",
+      "version": "1.0.0",
+      "path": "ui-showcase",
+      "toolCount": 1,
+      "networkHosts": []
     }
   ]
 }

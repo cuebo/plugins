@@ -11,6 +11,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
+| [`ui-showcase/`](ui-showcase/) | 测试原生插件页面、对话卡片、34 种组件及固定动作 | `https://github.com/cuebo/plugins/tree/main/ui-showcase` |
 
 ## 在 App 中安装
 
@@ -38,7 +39,7 @@ plugins/
 
 `plugin.json` 至少声明唯一的 `id`、`name`、`version`、`files` 和 `tools`。`files` 中写相对插件目录的脚本路径；仓库文件里的值可以留空，App 导入时会读取对应脚本并填入内容。`main.js` 用 `registerTool(name, function(argsJSON) { ... })` 注册与 `tools` 声明同名的工具，返回字符串；建议返回 JSON 字符串。可选的 `pe` 是注入 Agent 的插件使用说明，只写调用时需要的内容。
 
-插件脚本运行在受限 JavaScript 环境中。可使用 `host.config`、`host.storage`、`host.choose`、`host.request`、`host.attachments`，以及在声明并启用对应能力后使用 `host.call` 调用浏览器或图片能力。声明 `generative_ui` 且 Agent 启用界面展示后，可用 `host.ui("show", JSON.stringify({id:"demo",title:"标题",components:[{id:"text",component:"Text",text:"内容"},{id:"root",component:"Column",children:["text"]}]}))` 展示 A2UI 卡片；同一轮用相同 ID 的 `host.ui("update", JSON.stringify({...}))` 更新。界面展示无需逐次弹窗授权，宿主会验证组件结构、大小及链接动作。网络请求通过 App 的 HTTPS 接口，首次访问未授权域名时自动请用户确认；同意后保存到该 Agent 的插件白名单。脚本不能直接使用 Node.js 或文件系统。不要把密钥写进仓库；需要密钥时使用 `config` 的 `secret` 字段，由用户在 App 中配置。
+插件脚本运行在受限 JavaScript 环境中。可使用 `host.config`、`host.storage`、`host.choose`、`host.request`、`host.attachments`，以及在声明并启用对应能力后使用 `host.call` 调用浏览器或图片能力。设置 `ui:true` 并定义 `dashboard(ctx)`、`detail(ctx)`、可选的 `sheet(ctx)` 和 `actions`，就能在 Agent 的插件页展示原生界面。声明 `generative_ui` 且 Agent 启用界面展示后，还可用 `host.ui("show", JSON.stringify({id:"demo",title:"标题",components:[{id:"text",component:"Text",text:"内容"},{id:"root",component:"Column",children:["text"]}]}))` 展示对话卡片；同一轮用相同 ID 的 `host.ui("update", JSON.stringify({...}))` 更新。页面和卡片可复用同一组件及动作。网络请求通过 App 的 HTTPS 接口，首次访问未授权域名时自动请用户确认；同意后保存到该 Agent 的插件白名单。脚本不能直接使用 Node.js 或文件系统。不要把密钥写进仓库；需要密钥时使用 `config` 的 `secret` 字段，由用户在 App 中配置。
 
 更新插件时递增 `version`，并在 App 中重新导入对应目录链接。公开插件请保持目录和 `id` 稳定，避免用户重新导入后出现两个不同插件。
 

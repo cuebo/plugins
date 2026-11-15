@@ -54,7 +54,7 @@ registerTool("greet", function (argsJSON) {
 | `host.attachments()` | 本轮用户消息的图片引用；经确认后可将指定图片上传到公网服务 | 上传前确认域名、图片和目标地址 |
 | `host.call("browser.*", …)` | App **内置浏览器当前页面**的标题、URL、HTML、截图和操作结果 | 包声明 `wk_browser`，Agent 启用浏览器 |
 | `host.call("photo.*", …)` | 当前对话最近一条用户消息里的图片及编辑预览、操作结果 | 包声明 `brightroom_photo`，Agent 启用图片编辑 |
-| `host.ui("show"/"update", …)` | 在当前轮对话创建或更新 A2UI 卡片 | 包声明 `generative_ui`，Agent 启用界面展示 |
+| `host.ui("show"/"update", …)` | 在当前轮对话创建或更新原生组件卡片 | 包声明 `generative_ui`，Agent 启用界面展示 |
 | `host.choose()` | 用户在选择弹层提交的选项或取消结果 | 仅插件工具，且工具声明 `onSelect` 回调 |
 | Eino middleware | 对应钩子的消息、工具列表、调用参数或结果 | 包声明对应回调 |
 
@@ -171,7 +171,9 @@ var updated = JSON.parse(host.ui("update", JSON.stringify(card)));
 
 先 `show`，同一轮才能用相同 `id` 执行 `update`；后者替换**整张卡片**，不是局部节点补丁。重复 `show` 同一 ID 会报错，下一轮需重新 `show`。卡片 ID 在插件间隔离。`id` 以英文字母开头，后续可用英文字母、数字、下划线和连字符，最长 64 字符。`title` 必填，最多 80 字；可选的 `subtitle` 最多 200 字。
 
-`components` 是 A2UI v0.9 的扁平节点数组：每个节点有唯一 `id` 和 `component`，必须包含 `root`；`Row`、`Column`、`List` 用 `children` 引用节点 ID，`Card`、`Button` 用 `child` 引用节点 ID。支持 `Text`、`Image`、`Icon`、`Row`、`Column`、`List`、`Card`、`Divider`、`Button`、`CueboMetrics`、`CueboInfo`、`CueboLinkList`、`CueboChart`。最多 80 个节点，单次请求不超过 64 KB。`Button` 目前只能使用 `{event:{name:"open_url",context:{url:"https://example.com"}}}` 打开网页，点击不会回调插件；没有通用表单输入或任意原生页面控制。工具返回给模型的结果仍应包含有用的状态和数据，不能只返回 `{ok:true}`。
+`components` 是原生组件的扁平节点数组：每个节点有唯一 `id` 和 `component`，必须包含 `root`；容器通过 `children` 或 `child` 引用节点 ID。当前支持 34 种组件，完整示例见[界面组件演示插件](../ui-showcase/)。最多 80 个节点，单次请求不超过 64 KB。`Button` 等交互组件的 `action` 可为 `{openURL:"https://example.com"}`、`{navigate:{surface:"detail",route:"status"}}`、`{navigate:{surface:"sheet",route:"help"}}` 或 `{plugin:{actionID:"refresh",params:{}}}`。布局和动作由插件脚本固定定义，工具返回给模型的结果仍应包含有用的状态和数据，不能只返回 `{ok:true}`。
+
+插件自身的入口页面在 `plugin.json` 设置 `"ui":true`，并在脚本中定义 `dashboard(ctx)`、`detail(ctx)`、可选的 `sheet(ctx)` 以及 `actions` 对象。页面函数返回 `{title,components}`，动作函数接收 `ctx` 并返回 `{effects:[...]}`；效果可为 `toast`、`navigate`、`refresh` 或 `replace`。`ctx` 含 `surface`、`route`、`actionId` 和 `params`。页面运行时也可用 `host.config()`、`host.storage()` 和 `host.request()`，数据仍按 Agent 隔离。插件入口与对话卡片使用同一套原生组件和动作处理。
 
 展示和更新同一张卡片时，应在同一轮按先后顺序调用 `host.ui("show", ...)` 和 `host.ui("update", ...)`，并使用相同的卡片 ID。
 
