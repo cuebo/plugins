@@ -53,7 +53,7 @@ registerTool("show_metrics", function(raw) {
         {id:id + "-label",text:{text:item.label,style:"PLUGIN_TEXT_STYLE_CAPTION"}},
         {id:id + "-value",text:{text:item.value,style:"PLUGIN_TEXT_STYLE_VALUE"}}
       ];
-      if (item.change) children.push({id:id + "-change",badge:{text:item.change,appearance:{accent:accent}}});
+      if (item.change) children.push({id:id + "-change",text:{text:item.change,style:"PLUGIN_TEXT_STYLE_CAPTION"}});
       return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},children:children}};
     })
   }}],items.length);
