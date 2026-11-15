@@ -82,6 +82,17 @@ function registerChart(name, kind) {
       if (!isFinite(value) || Math.abs(value) > 1000000000000 || (kind === "pie_chart" && value <= 0)) throw new Error("图表数值无效");
       return {label:requireText(item.label,"数据名称",50),value:value};
     });
+    if (kind === "bar_chart") {
+      var title = requireText(input.title,"标题",80);
+      var nodes = [
+        {id:"chart",component:"CueboChart",chartType:kind,items:items},
+        {id:"title",component:"Text",text:title,variant:"h3",align:"center"},
+        {id:"root",component:"Column",children:["chart","title"]}
+      ];
+      var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
+      var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:title,components:nodes})));
+      return JSON.stringify({shown:response.ok === true,count:items.length});
+    }
     return show(input,input.subtitle,200,{id:"chart",component:"CueboChart",chartType:kind,items:items});
   });
 }
