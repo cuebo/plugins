@@ -14,12 +14,12 @@ function requireItems(value, min, max) {
   return value;
 }
 
-function showContent(title, component) {
+function showContent(title, components, count) {
   var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
   var response = JSON.parse(host.ui("show", JSON.stringify({
-    id:id,title:title,components:[component,{id:"root",component:"Column",children:[component.id]}]
+    id:id,title:title,components:components
   })));
-  return JSON.stringify({shown:response.ok === true,count:component.items.length});
+  return JSON.stringify({shown:response.ok === true,count:count});
 }
 
 registerTool("show_list", function(raw) {
@@ -31,7 +31,9 @@ registerTool("show_list", function(raw) {
       subtitle:requireText(item.subtitle,"条目说明",240),url:url,
       image_url:optionalURL(item.image_url)};
   });
-  return showContent("链接列表",{id:"links",component:"CueboLinkList",items:items});
+  return showContent("链接列表",[{id:"links",list:{items:items.map(function(item) {
+    return {title:item.title,subtitle:item.subtitle,imageURL:item.image_url,onTap:{openURL:item.url}};
+  })}}],items.length);
 });
 
 registerTool("show_metrics", function(raw) {
@@ -42,7 +44,10 @@ registerTool("show_metrics", function(raw) {
     if ((change && ["up","down","flat"].indexOf(trend) < 0) || (!change && trend)) throw new Error("趋势无效");
     return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),change:change,trend:trend};
   });
-  return showContent("指标",{id:"metrics",component:"CueboMetrics",items:items});
+  return showContent("指标",[{id:"metrics",stack:{children:items.map(function(item,index) {
+    var accent = item.trend === "up" ? "PLUGIN_ACCENT_GREEN" : item.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
+    return {id:"metric-" + index,value:{title:item.label,subtitle:item.change,value:{text:item.value},appearance:{accent:accent}}};
+  })}}],items.length);
 });
 
 function registerChart(name, kind) {
@@ -54,25 +59,16 @@ function registerChart(name, kind) {
       return {label:requireText(item.label,"数据名称",50),value:value};
     });
     var title = requireText(input.title,"标题",80);
-    var nodes = [
-      {id:"chart",component:"CueboChart",chartType:kind,items:items},
-      {id:"title",component:"Text",text:title,variant:"h3",align:"center"},
-      {id:"root",component:"Column",children:["chart","title"]}
-    ];
-    var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
-    var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:title,components:nodes})));
-    return JSON.stringify({shown:response.ok === true,count:items.length});
+    var chartKind = kind === "pie_chart" ? "PLUGIN_CHART_KIND_DONUT" : kind === "line_chart" ? "PLUGIN_CHART_KIND_LINE" : "PLUGIN_CHART_KIND_BAR";
+    return showContent(title,[{id:"chart",chart:{title:title,kind:chartKind,points:items}}],items.length);
   });
 }
 registerChart("show_pie_chart","pie_chart");
 registerChart("show_line_chart","line_chart");
 registerChart("show_bar_chart","bar_chart");
 
-function dashboard() {
-  return {title:"基础卡片",components:[
-    {id:"title",component:"Text",text:"基础卡片",variant:"h3"},
-    {id:"hint",component:"Text",text:"在对话中展示链接列表、指标和图表。插件只接收内容，布局由固定脚本生成。",variant:"body"},
-    {id:"types",component:"Text",text:"链接列表 · 指标 · 饼图 · 折线图 · 柱状图",variant:"body"},
-    {id:"root",component:"Column",children:["title","hint","types"]}
-  ]};
+function dashboard(ctx) {
+  var page = detail(ctx);
+  page.title = "基础卡片 · 组件演示";
+  return page;
 }
