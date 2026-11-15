@@ -33,7 +33,7 @@ registerTool("show_list", function(raw) {
   });
   return showContent("链接列表",[{id:"links",list:{items:items.map(function(item) {
     return {title:item.title,subtitle:item.subtitle,imageURL:item.image_url,
-      appearance:{accent:"PLUGIN_ACCENT_BLUE",iconSource:{systemName:"globe"}},
+      appearance:{accent:"PLUGIN_ACCENT_BLUE",iconSource:{systemName:"arrow.up.right.square"}},
       onTap:{openURL:item.url}};
   })}}],items.length);
 });
