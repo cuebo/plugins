@@ -39,7 +39,7 @@ registerTool("greet", function (argsJSON) {
 });
 ```
 
-模型看到的工具名是 `plugin_my_plugin_greet`。`parameters` 支持 `string`、`number`、`boolean`，字段名映射到 `{type, description, required}`。工具的输入是 **JSON 字符串**，返回字符串；建议返回 JSON 字符串，方便模型判断成功和失败。每个 `tools[].name` 都必须对应同名 `registerTool`。
+模型看到的工具名是 `plugin_my_plugin_greet`。`parameters` 支持 `string`、`number`、`boolean`、`integer`、`array` 和 `object`，字段名映射到 `{type, description, required}`；数组用 `items` 定义元素，对象用 `properties` 定义字段。工具的输入是 **JSON 字符串**，返回字符串；建议返回 JSON 字符串，方便模型判断成功和失败。每个 `tools[].name` 都必须对应同名 `registerTool`。
 
 `id` 为 2–64 位小写字母、数字、连字符，且以字母开头；工具名可再包含下划线。`description` 用于列表，`pe` 是挂载后注入模型的使用说明。修改插件要递增 `version`。脚本可拆在 `scripts/*.js`，辅助脚本按路径排序先加载，`main.js` 最后加载。
 
@@ -54,7 +54,7 @@ registerTool("greet", function (argsJSON) {
 | `host.attachments()` | 本轮用户消息的图片引用；经确认后可将指定图片上传到公网服务 | 上传前确认域名、图片和目标地址 |
 | `host.call("browser.*", …)` | App **内置浏览器当前页面**的标题、URL、HTML、截图和操作结果 | 包声明 `wk_browser`，Agent 启用浏览器 |
 | `host.call("photo.*", …)` | 当前对话最近一条用户消息里的图片及编辑预览、操作结果 | 包声明 `brightroom_photo`，Agent 启用图片编辑 |
-| `host.ui("show"/"update", …)` | 在当前轮对话创建或更新原生组件卡片 | 包声明 `generative_ui`，Agent 启用界面展示 |
+| `host.ui("show"/"update", …)` | 在当前轮对话创建或更新原生组件卡片 | 包设置 `ui:true`，Agent 挂载该插件 |
 | `host.choose()` | 用户在选择弹层提交的选项或取消结果 | 仅插件工具，且工具声明 `onSelect` 回调 |
 | Eino middleware | 对应钩子的消息、工具列表、调用参数或结果 | 包声明对应回调 |
 
@@ -152,7 +152,7 @@ var result = JSON.parse(host.attachments("upload", JSON.stringify({
 
 ## 创建和更新对话卡片：`host.ui(action, cardJSON)`
 
-在 `plugin.json` 声明 `"capabilities": ["generative_ui"]`，当前 Agent 还须启用“界面展示”能力。插件工具和 Eino 回调都可以调用 `host.ui`；它只操作**当前轮对话里的卡片**，不能修改 App 其他页面。`cardJSON` 是 JSON 字符串，成功返回 JSON 字符串 `{"ok":true}`。展示卡片本身不弹授权窗。
+在 `plugin.json` 设置 `"ui": true`，当前 Agent 挂载该插件后，插件工具和 Eino 回调就可以调用 `host.ui`；它只操作**当前轮对话里的卡片**，不能修改 App 其他页面。`cardJSON` 是 JSON 字符串，成功返回 JSON 字符串 `{"ok":true}`。展示卡片本身不弹授权窗。
 
 ```js
 var card = {

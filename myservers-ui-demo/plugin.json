@@ -7,7 +7,6 @@
   "ui": true,
   "uiProtocol": "myservers-v1",
   "files": {"scripts/myservers-demo.js": "scripts/myservers-demo.js", "main.js": "main.js"},
-  "capabilities": ["generative_ui"],
   "config": [
     {"id": "host_label", "title": "演示设备名称", "type": "text"},
     {"id": "accent", "title": "强调色", "type": "select", "options": ["blue", "green", "purple"]}

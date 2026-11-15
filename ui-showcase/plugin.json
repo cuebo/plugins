@@ -6,7 +6,6 @@
   "version": "1.0.0",
   "ui": true,
   "files": {"main.js": "main.js"},
-  "capabilities": ["generative_ui"],
   "tools": [
     {"name": "show_ui_showcase", "description": "在当前对话中展示可进入二级页和弹层的插件组件演示卡片"}
   ]
