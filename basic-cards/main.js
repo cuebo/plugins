@@ -32,7 +32,9 @@ registerTool("show_list", function(raw) {
       image_url:optionalURL(item.image_url)};
   });
   return showContent("链接列表",[{id:"links",list:{items:items.map(function(item) {
-    return {title:item.title,subtitle:item.subtitle,imageURL:item.image_url,onTap:{openURL:item.url}};
+    return {title:item.title,subtitle:item.subtitle,imageURL:item.image_url,
+      appearance:{accent:"PLUGIN_ACCENT_BLUE",iconSource:{systemName:"globe"}},
+      onTap:{openURL:item.url}};
   })}}],items.length);
 });
 
