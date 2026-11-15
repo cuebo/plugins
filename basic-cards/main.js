@@ -27,8 +27,10 @@ registerTool("show_list", function(raw) {
   var items = requireItems(input.items, 1, 40).map(function(item) {
     var url = optionalURL(item.url);
     if (!url) throw new Error("条目链接无效");
+    var subtitle = typeof item.subtitle === "string" ? item.subtitle.trim() : "";
+    if (subtitle.length > 240) throw new Error("条目说明无效");
     return {title:requireText(item.title,"条目标题",100),
-      subtitle:requireText(item.subtitle,"条目说明",240),url:url,
+      subtitle:subtitle,url:url,
       image_url:optionalURL(item.image_url)};
   });
   return showContent("链接列表",[{id:"links",list:{items:items.map(function(item) {
@@ -40,7 +42,7 @@ registerTool("show_list", function(raw) {
 
 registerTool("show_metrics", function(raw) {
   var input = JSON.parse(raw);
-  var items = requireItems(input.items, 1, 4).map(function(item) {
+  var items = requireItems(input.items, 1, 12).map(function(item) {
     var change = typeof item.change === "string" ? item.change : "";
     var trend = typeof item.trend === "string" ? item.trend : "";
     var icon = typeof item.icon === "string" ? item.icon.trim() : "";

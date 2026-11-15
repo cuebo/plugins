@@ -4,8 +4,8 @@
     {
       "id": "basic-cards",
       "name": "基础卡片",
-      "description": "在对话中展示五种基础卡片，插件界面展示 35 个组件示例。",
-      "version": "1.2.5",
+      "description": "在对话中展示网页列表、指标卡、饼图、折线图和柱状图；插件界面提供组件示例。",
+      "version": "1.2.6",
       "path": "basic-cards",
       "toolCount": 5,
       "networkHosts": []
