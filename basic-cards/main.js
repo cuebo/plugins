@@ -41,16 +41,23 @@ registerTool("show_metrics", function(raw) {
   var items = requireItems(input.items, 1, 4).map(function(item) {
     var change = typeof item.change === "string" ? item.change : "";
     var trend = typeof item.trend === "string" ? item.trend : "";
+    var icon = typeof item.icon === "string" ? item.icon.trim() : "";
     if ((change && ["up","down","flat"].indexOf(trend) < 0) || (!change && trend)) throw new Error("趋势无效");
-    return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),change:change,trend:trend};
+    if (icon && !/^[a-z0-9][a-z0-9.-]{0,79}$/.test(icon)) throw new Error("图标名称无效");
+    return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),change:change,trend:trend,icon:icon};
   });
   return showContent("指标",[{id:"metrics",grid:{columns:2,spacing:10,
     appearance:{container:"PLUGIN_CONTAINER_STYLE_NONE"},
     children:items.map(function(item,index) {
       var id = "metric-" + index;
       var accent = item.trend === "up" ? "PLUGIN_ACCENT_GREEN" : item.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
+      var title = {id:id + "-label",text:{text:item.label,style:"PLUGIN_TEXT_STYLE_CAPTION"}};
+      if (item.icon) title = {id:id + "-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:5,children:[
+        {id:id + "-icon",icon:{appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT",iconSource:{systemName:item.icon}}}},
+        title
+      ]}};
       var children = [
-        {id:id + "-label",text:{text:item.label,style:"PLUGIN_TEXT_STYLE_CAPTION"}},
+        title,
         {id:id + "-value",text:{text:item.value,style:"PLUGIN_TEXT_STYLE_VALUE"}}
       ];
       if (item.change) children.push({id:id + "-change",text:{text:item.change,style:"PLUGIN_TEXT_STYLE_CAPTION"}});

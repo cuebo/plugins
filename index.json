@@ -5,7 +5,7 @@
       "id": "basic-cards",
       "name": "基础卡片",
       "description": "在对话中展示五种基础卡片，插件界面展示 35 个组件示例。",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "path": "basic-cards",
       "toolCount": 5,
       "networkHosts": []

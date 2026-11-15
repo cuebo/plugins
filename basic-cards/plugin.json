@@ -3,7 +3,7 @@
   "name": "基础卡片",
   "description": "在对话中展示五种基础卡片，插件界面展示 35 个组件示例。",
   "pe": "需要用卡片呈现真实的结构化结果时，选择基础卡片插件的对应工具；只传内容数据，不生成布局或动作。工具返回 shown:true 才能说卡片已展示。",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "files": {
@@ -49,7 +49,7 @@
     },
     {
       "name": "show_metrics",
-      "description": "展示 1 至 4 项指标。数值保持原文，可附变化文案与 up/down/flat 趋势。",
+      "description": "展示 1 至 4 项指标。每项可选 SF Symbols 图标（icon），显示在顶部标题前；数值保持原文，可附变化文案与 up/down/flat 趋势。",
       "parameters": {
         "items": {
           "type": "array",
@@ -62,6 +62,11 @@
                 "type": "string",
                 "description": "指标名称",
                 "required": true
+              },
+              "icon": {
+                "type": "string",
+                "description": "可选 SF Symbols 图标名称，如 cpu、memorychip、network",
+                "required": false
               },
               "value": {
                 "type": "string",
