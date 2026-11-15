@@ -175,6 +175,8 @@ var updated = JSON.parse(host.ui("update", JSON.stringify(card)));
 
 插件自身的入口页面在 `plugin.json` 设置 `"ui":true`，并在脚本中定义 `dashboard(ctx)`、`detail(ctx)`、可选的 `sheet(ctx)` 以及 `actions` 对象。页面函数返回 `{title,components}`，动作函数接收 `ctx` 并返回 `{effects:[...]}`；效果可为 `toast`、`navigate`、`refresh` 或 `replace`。`ctx` 含 `surface`、`route`、`actionId` 和 `params`。页面运行时也可用 `host.config()`、`host.storage()` 和 `host.request()`，数据仍按 Agent 隔离。插件入口与对话卡片使用同一套原生组件和动作处理。
 
+已有 MyServers 插件可以声明 `"uiProtocol":"myservers-v1"`，保留原来的嵌套组件结构（例如 `{id:"title",text:{text:"演示"}}`），以及 `onTap` / `onChange` / `onSubmit`、`{plugin:{actionId:"..."}}`、`{navigate:{surface:"sheet",route:"...",detents:["medium","large"]}}` 和 `replaceComponents`。此模式的 `dashboard/detail/sheet` 可继续读取 `ctx.config`；对话中的 `host.ui` 也接受同一组件结构。插件页与对话卡片都使用 cuebo 的 MyServers 协议渲染器。完整可运行示例见 [MyServers 原版 UI 演示插件](../myservers-ui-demo/)；它的原始演示脚本未修改。
+
 展示和更新同一张卡片时，应在同一轮按先后顺序调用 `host.ui("show", ...)` 和 `host.ui("update", ...)`，并使用相同的卡片 ID。
 
 ## 用户交互与操作确认

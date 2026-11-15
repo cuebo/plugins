@@ -24,6 +24,15 @@
       ]
     },
     {
+      "id": "myservers-ui-demo",
+      "name": "MyServers 原版 UI 演示",
+      "description": "运行 MyServers NAS 演示脚本，逐项查看 35 个组件示例、弹层和源码",
+      "version": "1.0.0",
+      "path": "myservers-ui-demo",
+      "toolCount": 1,
+      "networkHosts": []
+    },
+    {
       "id": "telegram-groups",
       "name": "Telegram 群消息",
       "description": "读取群消息、选群、回复和投票，并在确认后管理群消息与成员",
