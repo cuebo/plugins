@@ -1,79 +1,18 @@
 {
   "id": "basic-cards",
   "name": "基础卡片",
-  "description": "在对话中展示信息、链接列表、指标、饼图、折线图和柱状图。",
+  "description": "在对话中展示链接列表、指标、饼图、折线图和柱状图。",
   "pe": "需要用卡片呈现真实的结构化结果时，选择基础卡片插件的对应工具；只传内容数据，不生成布局或动作。工具返回 shown:true 才能说卡片已展示。",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "ui": true,
   "files": {
     "main.js": "main.js"
   },
   "tools": [
     {
-      "name": "show_info",
-      "description": "展示信息卡。输入标题、结果简述和可展开的条目；只传内容数据，不编写布局。",
-      "parameters": {
-        "title": {
-          "type": "string",
-          "description": "卡片标题，最多 80 字",
-          "required": true
-        },
-        "summary": {
-          "type": "string",
-          "description": "结果简述，最多 500 字",
-          "required": true
-        },
-        "image_url": {
-          "type": "string",
-          "description": "可选 HTTP/HTTPS 图片地址",
-          "required": false
-        },
-        "items": {
-          "type": "array",
-          "description": "至少 1 个信息条目",
-          "required": true,
-          "items": {
-            "type": "object",
-            "properties": {
-              "label": {
-                "type": "string",
-                "description": "条目名称",
-                "required": true
-              },
-              "subtitle": {
-                "type": "string",
-                "description": "可选副标题",
-                "required": false
-              },
-              "value": {
-                "type": "string",
-                "description": "条目内容",
-                "required": true
-              }
-            }
-          }
-        }
-      }
-    },
-    {
       "name": "show_list",
-      "description": "展示可点开的网页链接列表。只传真实的标题、说明和 HTTP/HTTPS 地址。",
+      "description": "展示可点开的网页链接列表。只传真实的条目标题、说明和 HTTP/HTTPS 地址。",
       "parameters": {
-        "title": {
-          "type": "string",
-          "description": "卡片标题，最多 80 字",
-          "required": true
-        },
-        "subtitle": {
-          "type": "string",
-          "description": "卡片说明，最多 200 字",
-          "required": true
-        },
-        "image_url": {
-          "type": "string",
-          "description": "可选 HTTP/HTTPS 图片地址",
-          "required": false
-        },
         "items": {
           "type": "array",
           "description": "至少 1 个网页条目",
@@ -110,21 +49,6 @@
       "name": "show_metrics",
       "description": "展示 1 至 4 项指标。数值保持原文，可附变化文案与 up/down/flat 趋势。",
       "parameters": {
-        "title": {
-          "type": "string",
-          "description": "卡片标题，最多 80 字",
-          "required": true
-        },
-        "subtitle": {
-          "type": "string",
-          "description": "卡片说明，最多 200 字",
-          "required": true
-        },
-        "image_url": {
-          "type": "string",
-          "description": "可选 HTTP/HTTPS 图片地址",
-          "required": false
-        },
         "items": {
           "type": "array",
           "description": "1 至 4 项指标",

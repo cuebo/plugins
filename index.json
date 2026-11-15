@@ -4,10 +4,10 @@
     {
       "id": "basic-cards",
       "name": "基础卡片",
-      "description": "在对话中展示信息、链接列表、指标、饼图、折线图和柱状图。",
-      "version": "1.0.2",
+      "description": "在对话中展示链接列表、指标、饼图、折线图和柱状图。",
+      "version": "1.0.3",
       "path": "basic-cards",
-      "toolCount": 6,
+      "toolCount": 5,
       "networkHosts": []
     },
     {
