@@ -27,10 +27,6 @@ function serverStatusBadge(id, text, accent) {
   return {id:id,badge:{text:text,appearance:{accent:accent}}};
 }
 
-function serverStatusMetric(id, child, accent) {
-  return {id:id,card:{appearance:{accent:accent},children:[child]}};
-}
-
 registerTool("show_status", function(raw) {
   var input = JSON.parse(raw || "{}");
   var name = serverStatusText(input.name, "服务器名称", 60);
@@ -65,32 +61,38 @@ registerTool("show_status", function(raw) {
     serverStatusBadge("server-online",input.online ? "● 在线" : "● 离线",input.online ? "PLUGIN_ACCENT_GREEN" : "PLUGIN_ACCENT_RED")
   ]}};
   var children = [header];
-  if (sampledAt) children.push({id:"sampled-at",text:{text:"采样 " + sampledAt,style:"PLUGIN_TEXT_STYLE_CAPTION"}});
 
   var facts = [];
   if (uptime !== null) {
     var days = Math.floor(uptime / 86400);
     var hours = Math.floor(uptime % 86400 / 3600);
-    facts.push(serverStatusBadge("uptime", "运行 " + (days ? days + " 天" : hours + " 小时"), "PLUGIN_ACCENT_BLUE"));
+    facts.push(serverStatusBadge("uptime", "运行" + (days ? days + "天" : hours + "小时"), "PLUGIN_ACCENT_GRAY"));
   }
-  if (cores !== null) facts.push(serverStatusBadge("cores", "核心 " + cores + " 核", "PLUGIN_ACCENT_BLUE"));
-  if (memoryTotal !== null) facts.push(serverStatusBadge("memory-total", "内存 " + serverStatusRounded(memoryTotal) + " GiB", "PLUGIN_ACCENT_BLUE"));
-  if (temperature !== null) facts.push(serverStatusBadge("temperature", "温度 " + serverStatusRounded(temperature) + "°C", "PLUGIN_ACCENT_ORANGE"));
-  if (facts.length) children.push({id:"server-facts",grid:{columns:2,spacing:7,children:facts}});
+  if (cores !== null) facts.push(serverStatusBadge("cores", "核心" + cores + "核", "PLUGIN_ACCENT_GRAY"));
+  if (memoryTotal !== null) facts.push(serverStatusBadge("memory-total", "内存" + serverStatusRounded(memoryTotal) + "G", "PLUGIN_ACCENT_GRAY"));
+  if (temperature !== null) facts.push(serverStatusBadge("temperature", "温度" + serverStatusRounded(temperature) + "°C", "PLUGIN_ACCENT_GRAY"));
+  if (facts.length) children.push({id:"server-facts",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:3,children:facts}});
 
   var metrics = [];
-  if (cpu !== null) metrics.push(serverStatusMetric("cpu-tile",{id:"cpu-ring",circularProgress:{title:"CPU",progress:cpu / 100,value:{text:serverStatusRounded(cpu) + "%"},appearance:{accent:"PLUGIN_ACCENT_BLUE"}}},"PLUGIN_ACCENT_BLUE"));
-  if (memory !== null) metrics.push(serverStatusMetric("memory-tile",{id:"memory-ring",circularProgress:{title:"内存",progress:memory / 100,value:{text:serverStatusRounded(memory) + "%"},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}},"PLUGIN_ACCENT_GREEN"));
+  if (cpu !== null) metrics.push({id:"cpu-ring",circularProgress:{title:"CPU",progress:cpu / 100,value:{text:serverStatusRounded(cpu) + "%"},appearance:{accent:"PLUGIN_ACCENT_BLUE"}}});
+  if (memory !== null) metrics.push({id:"memory-ring",circularProgress:{title:"内存",progress:memory / 100,value:{text:serverStatusRounded(memory) + "%"},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
   if (upload !== null || download !== null) {
-    var networkChildren = [{id:"network-title",text:{text:"网络",style:"PLUGIN_TEXT_STYLE_TITLE"}}];
+    var networkChildren = [];
     if (upload !== null) networkChildren.push({id:"network-up",text:{text:"↑ " + serverStatusRate(upload),style:"PLUGIN_TEXT_STYLE_BODY"}});
     if (download !== null) networkChildren.push({id:"network-down",text:{text:"↓ " + serverStatusRate(download),style:"PLUGIN_TEXT_STYLE_BODY"}});
-    metrics.push({id:"network-tile",card:{appearance:{accent:"PLUGIN_ACCENT_TEAL"},children:networkChildren}});
+    networkChildren.push({id:"network-title",text:{text:"网络",style:"PLUGIN_TEXT_STYLE_CAPTION"}});
+    metrics.push({id:"network-values",stack:{children:networkChildren}});
   }
-  if (disk !== null) metrics.push(serverStatusMetric("disk-tile",{id:"disk-progress",progress:{title:"磁盘",progress:disk / 100,value:{text:serverStatusRounded(disk) + "%" + (diskTotal !== null ? " · " + serverStatusRounded(diskTotal) + " GiB" : "")},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}},"PLUGIN_ACCENT_GREEN"));
+  if (disk !== null) metrics.push({id:"disk-progress",progress:{title:"磁盘",progress:disk / 100,value:{text:serverStatusRounded(disk) + "%" + (diskTotal !== null ? " · " + serverStatusRounded(diskTotal) + " GiB" : "")},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
   if (metrics.length) children.push({id:"server-metrics",grid:{columns:2,spacing:9,children:metrics}});
 
-  var card = {id:"server" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),title:"服务器状态",components:[{id:"server-card",card:{appearance:{accent:"PLUGIN_ACCENT_TEAL"},children:children}}]};
+  var card = {id:"server" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),title:"服务器状态",components:[
+    {id:"monitor-label",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:6,children:[
+      {id:"monitor-icon",icon:{appearance:{accent:"PLUGIN_ACCENT_BLUE",iconSource:{systemName:"waveform.path.ecg.rectangle"}}}},
+      {id:"monitor-text",text:{text:"系统监控",style:"PLUGIN_TEXT_STYLE_CAPTION"}}
+    ]}},
+    {id:"server-card",card:{appearance:{accent:"PLUGIN_ACCENT_GRAY"},children:children}}
+  ]};
   var response = JSON.parse(host.ui("show", JSON.stringify(card)));
   return JSON.stringify({shown:response.ok === true,name:name,online:input.online,sampled_at:sampledAt || null});
 });

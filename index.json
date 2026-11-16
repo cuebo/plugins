@@ -36,7 +36,7 @@
       "id": "server-status",
       "name": "服务器状态",
       "description": "将 Agent 实际采集的服务器或 NAS 指标展示为对话卡片",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "path": "server-status",
       "toolCount": 1,
       "networkHosts": []
