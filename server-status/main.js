@@ -24,7 +24,7 @@ function serverStatusRate(bytesPerSecond) {
 }
 
 function serverStatusBadge(id, text, accent) {
-  return {id:id,badge:{text:text,appearance:{accent:accent}}};
+  return {id:id,badge:{text:text,appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}};
 }
 
 registerTool("show_status", function(raw) {
@@ -74,24 +74,20 @@ registerTool("show_status", function(raw) {
   if (facts.length) children.push({id:"server-facts",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:3,children:facts}});
 
   var metrics = [];
-  if (cpu !== null) metrics.push({id:"cpu-ring",circularProgress:{title:"CPU",progress:cpu / 100,value:{text:serverStatusRounded(cpu) + "%"},appearance:{accent:"PLUGIN_ACCENT_BLUE"}}});
-  if (memory !== null) metrics.push({id:"memory-ring",circularProgress:{title:"内存",progress:memory / 100,value:{text:serverStatusRounded(memory) + "%"},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
+  if (cpu !== null) metrics.push({id:"cpu-ring",circularProgress:{title:"CPU",progress:cpu / 100,diameter:48,layout:"PLUGIN_LAYOUT_VERTICAL",value:{text:serverStatusRounded(cpu) + "%"},appearance:{accent:"PLUGIN_ACCENT_CYAN"}}});
+  if (memory !== null) metrics.push({id:"memory-ring",circularProgress:{title:"内存",progress:memory / 100,diameter:48,layout:"PLUGIN_LAYOUT_VERTICAL",value:{text:serverStatusRounded(memory) + "%"},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
   if (upload !== null || download !== null) {
     var networkChildren = [];
-    if (upload !== null) networkChildren.push({id:"network-up",text:{text:"↑ " + serverStatusRate(upload),style:"PLUGIN_TEXT_STYLE_BODY"}});
-    if (download !== null) networkChildren.push({id:"network-down",text:{text:"↓ " + serverStatusRate(download),style:"PLUGIN_TEXT_STYLE_BODY"}});
-    networkChildren.push({id:"network-title",text:{text:"网络",style:"PLUGIN_TEXT_STYLE_CAPTION"}});
-    metrics.push({id:"network-values",stack:{children:networkChildren}});
+    if (upload !== null) networkChildren.push({id:"network-up",text:{text:"↑ " + serverStatusRate(upload),style:"PLUGIN_TEXT_STYLE_CAPTION",appearance:{accent:"PLUGIN_ACCENT_YELLOW"}}});
+    if (download !== null) networkChildren.push({id:"network-down",text:{text:"↓ " + serverStatusRate(download),style:"PLUGIN_TEXT_STYLE_CAPTION",appearance:{accent:"PLUGIN_ACCENT_BLUE"}}});
+    networkChildren.push({id:"network-title",text:{text:"网络",style:"PLUGIN_TEXT_STYLE_CAPTION",alignment:"PLUGIN_ALIGNMENT_CENTER"}});
+    metrics.push({id:"network-values",stack:{spacing:5,children:networkChildren}});
   }
-  if (disk !== null) metrics.push({id:"disk-progress",progress:{title:"磁盘",progress:disk / 100,value:{text:serverStatusRounded(disk) + "%" + (diskTotal !== null ? " · " + serverStatusRounded(diskTotal) + " GiB" : "")},appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
-  if (metrics.length) children.push({id:"server-metrics",grid:{columns:2,spacing:9,children:metrics}});
+  if (disk !== null) metrics.push({id:"disk-progress",progress:{title:"磁盘",progress:disk / 100,orientation:"PLUGIN_PROGRESS_ORIENTATION_VERTICAL",height:48,value:{text:serverStatusRounded(disk) + "%"},subtitle:diskTotal !== null ? serverStatusRounded(diskTotal) + "G" : "",appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
+  if (metrics.length) children.push({id:"server-metrics",grid:{columns:Math.min(metrics.length,4),spacing:4,children:metrics}});
 
   var card = {id:"server" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),title:"服务器状态",components:[
-    {id:"monitor-label",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:6,children:[
-      {id:"monitor-icon",icon:{appearance:{accent:"PLUGIN_ACCENT_BLUE",iconSource:{systemName:"waveform.path.ecg.rectangle"}}}},
-      {id:"monitor-text",text:{text:"系统监控",style:"PLUGIN_TEXT_STYLE_CAPTION"}}
-    ]}},
-    {id:"server-card",card:{appearance:{accent:"PLUGIN_ACCENT_GRAY"},children:children}}
+    {id:"server-card",card:{appearance:{accent:"PLUGIN_ACCENT_GRAY",variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:children}}
   ]};
   var response = JSON.parse(host.ui("show", JSON.stringify(card)));
   return JSON.stringify({shown:response.ok === true,name:name,online:input.online,sampled_at:sampledAt || null});
