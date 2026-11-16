@@ -177,6 +177,8 @@ var updated = JSON.parse(host.ui("update", JSON.stringify(card)));
 
 使用 Cuebo 组件协议的插件声明 `"uiProtocol":"cuebo-v1"`，以嵌套组件结构（例如 `{id:"title",text:{text:"演示"}}`）定义页面，支持 `onTap` / `onChange` / `onSubmit`、`{plugin:{actionId:"..."}}`、`{navigate:{surface:"sheet",route:"...",detents:["medium","large"]}}` 和 `replaceComponents`。`dashboard/detail/sheet` 可读取 `ctx.config`；对话中的 `host.ui` 也接受同一组件结构。插件页与对话卡片使用相同的组件渲染器。完整示例见 App 内置的[基础卡片插件](../basic-cards/)。
 
+日期热力图使用 `{id:"activity",calendarHeatmap:{title:"活动",startDate:"2026-01-01",endDate:"2026-12-31",days:[{date:"2026-01-01",value:3,level:2}],appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}`；可横向滚动，`level` 为可选的 0–4 级。图片可设置 `width`、`height`、`shape:"PLUGIN_IMAGE_SHAPE_CIRCLE"`、`borderWidth` 和 `appearance.accent`；图表可设置 `height`。这些都是通用组件字段，不依赖特定插件。
+
 展示和更新同一张卡片时，应在同一轮按先后顺序调用 `host.ui("show", ...)` 和 `host.ui("update", ...)`，并使用相同的卡片 ID。
 
 ## 用户交互与操作确认

@@ -9,7 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`basic-cards/`](basic-cards/) | App 内置的五种对话卡片；打开插件界面可查看 35 个组件示例 | App 内置 |
-| [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
+| [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
 | [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
