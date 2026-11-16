@@ -62,7 +62,7 @@ function profileGraphQL(query, variables) {
   try { body = JSON.parse(response.body || "{}"); } catch (_) { body = {}; }
   if (response.status < 200 || response.status >= 300 || !body.data || body.errors && body.errors.length) {
     return {ok:false,status:response.status,error:body.errors && body.errors[0] && body.errors[0].message ||
-      body.message || "GitHub 个人数据查询失败"};
+      body.message || "GitHub 数据查询失败"};
   }
   return {ok:true,data:body.data};
 }
@@ -95,6 +95,171 @@ function profileTile(id, title, value, symbol, accent) {
     profileText(id+"-value",value,"PLUGIN_TEXT_STYLE_DISPLAY",accent)
   ]}};
 }
+
+function repositoryHTTP(path) {
+  var config = JSON.parse(host.config());
+  if (!config.token) return {ok:false,error:"请先在此 Agent 的 GitHub 插件配置中填写访问令牌"};
+  var response;
+  try {
+    response = JSON.parse(host.request(JSON.stringify({
+      method:"GET",url:"https://api.github.com" + path,
+      headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer " + config.token,
+        "X-GitHub-Api-Version":"2022-11-28"}
+    })));
+  } catch (_) { return {ok:false,error:"GitHub 附加数据暂不可用"}; }
+  var data;
+  try { data = JSON.parse(response.body || "null"); } catch (_) { data = null; }
+  if (response.status < 200 || response.status >= 300) {
+    return {ok:false,status:response.status,error:data && data.message || "GitHub 请求失败"};
+  }
+  return {ok:true,status:response.status,data:data,link:response.link || ""};
+}
+
+function repositoryContributorCount(owner, repo) {
+  var answer = repositoryHTTP("/repos/" + cleanName(owner,"owner") + "/" + cleanName(repo,"repo") +
+    "/contributors?per_page=1&anon=true");
+  if (!answer.ok) return null;
+  if (answer.status === 204) return 0;
+  if (!Array.isArray(answer.data)) return null;
+  var lastURL = /<([^>]+)>;\s*rel="last"/.exec(answer.link);
+  var last = lastURL && /[?&]page=(\d+)(?:&|$)/.exec(lastURL[1]);
+  return last ? Number(last[1]) : answer.data.length;
+}
+
+function repositoryTechnology(repo) {
+  var names = [];
+  function add(name) { if (name && names.indexOf(name) < 0 && names.length < 5) names.push(name); }
+  add(repo.primaryLanguage && repo.primaryLanguage.name);
+  var blob = repo.packageJSON;
+  if (!blob || blob.isTruncated || typeof blob.text !== "string" || blob.text.length > 100000) return names;
+  var manifest;
+  try { manifest = JSON.parse(blob.text); } catch (_) { return names; }
+  var deps = {};
+  [manifest.dependencies,manifest.devDependencies,manifest.peerDependencies].forEach(function(group) {
+    if (group && typeof group === "object") Object.keys(group).forEach(function(key) { deps[key] = true; });
+  });
+  [["react","React"],["vue","Vue"],["next","Next.js"],["vite","Vite"],
+    ["tailwindcss","Tailwind"],["storybook","Storybook"],["svelte","Svelte"],
+    ["@angular/core","Angular"],["nuxt","Nuxt"]].forEach(function(item) {
+    if (deps[item[0]] || item[0] === "storybook" && Object.keys(deps).some(function(key) {
+      return key.indexOf("@storybook/") === 0;
+    })) add(item[1]);
+  });
+  return names;
+}
+
+function repositoryUpdated(value) {
+  var time = Date.parse(value || "");
+  if (!isFinite(time)) return "暂无记录";
+  var hours = Math.max(0,Math.floor((Date.now() - time) / 3600000));
+  if (hours < 1) return "刚刚";
+  if (hours < 24) return hours + " 小时前";
+  var days = Math.floor(hours / 24);
+  if (days < 30) return days + " 天前";
+  if (days < 365) return Math.floor(days / 30) + " 个月前";
+  return Math.floor(days / 365) + " 年前";
+}
+
+function repositoryBadge(id, value) {
+  return {id:id,badge:{text:value,appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}};
+}
+
+function repositoryInfo(id, title, value, accent) {
+  return {id:id,card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
+    profileText(id+"-title",title,"PLUGIN_TEXT_STYLE_CAPTION"),
+    profileText(id+"-value",value,"PLUGIN_TEXT_STYLE_TITLE",accent)
+  ]}};
+}
+
+registerTool("repo_card", function(raw) {
+  var input = JSON.parse(raw || "{}");
+  var owner = text(input.owner,"owner",100,true), repoName = text(input.repo,"repo",100,true);
+  cleanName(owner,"owner"); cleanName(repoName,"repo");
+  var query = "query($owner:String!,$repo:String!){repository(owner:$owner,name:$repo){" +
+    "name nameWithOwner description url isPrivate stargazerCount forkCount " +
+    "issues(states:OPEN){totalCount} pullRequests(states:OPEN){totalCount} watchers{totalCount} " +
+    "primaryLanguage{name} licenseInfo{spdxId name} latestRelease{tagName} pushedAt}}";
+  var answer = profileGraphQL(query,{owner:owner,repo:repoName});
+  if (!answer.ok) return JSON.stringify(answer);
+  var repository = answer.data.repository;
+  if (!repository) return JSON.stringify({ok:false,error:"未找到仓库，或当前令牌无权访问"});
+  try {
+    var packageAnswer = profileGraphQL("query($owner:String!,$repo:String!){repository(owner:$owner,name:$repo){" +
+      "packageJSON:object(expression:\"HEAD:package.json\"){... on Blob{text isTruncated}}}}",
+      {owner:owner,repo:repoName});
+    if (packageAnswer.ok && packageAnswer.data.repository) {
+      repository.packageJSON = packageAnswer.data.repository.packageJSON;
+    }
+  } catch (_) { /* Repository metadata is still useful without package.json. */ }
+  var parts = repository.nameWithOwner.split("/");
+  var canonicalOwner = parts[0] || owner, canonicalRepo = parts[1] || repoName;
+  var contributors = repositoryContributorCount(canonicalOwner,canonicalRepo);
+  var activity = repositoryHTTP("/repos/" + cleanName(canonicalOwner,"owner") + "/" +
+    cleanName(canonicalRepo,"repo") + "/stats/participation");
+  var weekly = activity.ok && activity.status === 200 && activity.data &&
+    Array.isArray(activity.data.all) ? activity.data.all.slice(-6) : [];
+  var points = weekly.map(function(value,index) {
+    return {label:index === weekly.length - 1 ? "本周" : "W-" + (weekly.length - index - 1),
+      value:Math.max(0,Number(value) || 0)};
+  });
+  var stack = repositoryTechnology(repository);
+  var license = repository.licenseInfo && repository.licenseInfo.spdxId;
+  if (!license || license === "NOASSERTION") license = repository.licenseInfo && repository.licenseInfo.name || "未标注";
+  var release = repository.latestRelease && repository.latestRelease.tagName || "暂无发布";
+  var description = (repository.description || "暂无仓库简介").slice(0,180);
+  var header = [profileIcon("repo-icon","chevron.left.forwardslash.chevron.right"),
+    {id:"repo-identity",stack:{spacing:2,children:[
+      profileText("repo-name",repository.name,"PLUGIN_TEXT_STYLE_TITLE"),
+      profileText("repo-owner",canonicalOwner + " · " + (repository.isPrivate ? "private" : "public"),"PLUGIN_TEXT_STYLE_CAPTION")
+    ]}},repositoryBadge("repo-brand","GitHub")];
+  var children = [
+    {id:"repo-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:8,children:header}},
+    {id:"repo-labels",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:6,children:[
+      repositoryBadge("repo-popular",repository.stargazerCount >= 1000 ? "热门仓库" : "仓库概览"),
+      repositoryBadge("repo-visibility",repository.isPrivate ? "私有" : "公开")
+    ]}},
+    profileText("repo-description",description,"PLUGIN_TEXT_STYLE_CAPTION"),
+    {id:"repo-stats",grid:{columns:2,spacing:7,children:[
+      profileTile("repo-stars","Stars",profileCount(repository.stargazerCount),"star"),
+      profileTile("repo-forks","Forks",profileCount(repository.forkCount),"tuningfork"),
+      profileTile("repo-issues","Open Issues",profileCount(repository.issues.totalCount),"exclamationmark.circle"),
+      profileTile("repo-pulls","Pull Requests",profileCount(repository.pullRequests.totalCount),"arrow.triangle.pull"),
+      profileTile("repo-watchers","Watchers",profileCount(repository.watchers.totalCount),"eye"),
+      profileTile("repo-contributors","Contributors",contributors == null ? "暂不可用" : profileCount(contributors),"person.2")
+    ]}},
+    {id:"repo-meta",grid:{columns:2,spacing:7,children:[
+      repositoryInfo("repo-language","主要语言",repository.primaryLanguage && repository.primaryLanguage.name || "未识别"),
+      repositoryInfo("repo-license","许可证",license),
+      repositoryInfo("repo-release","最新版本",release,"PLUGIN_ACCENT_GREEN"),
+      repositoryInfo("repo-updated","最近代码更新",repositoryUpdated(repository.pushedAt),"PLUGIN_ACCENT_GREEN")
+    ]}},
+    {id:"repo-activity",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
+      profileText("repo-activity-title","每周提交活动","PLUGIN_TEXT_STYLE_TITLE")
+    ].concat(points.length ? [{id:"repo-activity-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:130,
+      points:points,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}] : [
+        profileText("repo-activity-empty",activity.status === 202 ? "GitHub 正在生成统计，请稍后再试" :
+          "每周提交统计暂不可用","PLUGIN_TEXT_STYLE_CAPTION")
+      ])}}
+  ];
+  if (stack.length) children.push({id:"repo-stack",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
+    profileText("repo-stack-title","技术栈 · 从仓库文件推断","PLUGIN_TEXT_STYLE_TITLE"),
+    {id:"repo-stack-tags",grid:{columns:3,spacing:5,children:stack.map(function(name,index) {
+      return repositoryBadge("repo-stack-" + index,name);
+    })}}
+  ]}});
+  children.push(profileText("repo-data-note","实时查询快照 · 热门标签为 Stars ≥ 1000","PLUGIN_TEXT_STYLE_CAPTION"));
+  var card = {id:"githubrepo" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),
+    title:"GitHub 仓库概览",components:[{id:"repo-root",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},
+      onTap:{openURL:repository.url},children:children}}]};
+  var shown = JSON.parse(host.ui("show",JSON.stringify(card)));
+  return JSON.stringify({shown:shown.ok === true,repository:repository.nameWithOwner,url:repository.url,
+    stars:repository.stargazerCount,forks:repository.forkCount,open_issues:repository.issues.totalCount,
+    open_pull_requests:repository.pullRequests.totalCount,watchers:repository.watchers.totalCount,
+    contributors:contributors,primary_language:repository.primaryLanguage && repository.primaryLanguage.name || null,
+    latest_release:repository.latestRelease && repository.latestRelease.tagName || null,
+    technologies:stack,weekly_commit_counts:points.map(function(point) { return point.value; }),
+    weekly_activity_available:points.length > 0});
+});
 
 registerTool("profile_card", function() {
   var firstQuery = "query($cursor:String){viewer{login name avatarUrl(size:128) url followers{totalCount} following{totalCount} " +

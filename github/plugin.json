@@ -1,9 +1,9 @@
 {
   "id": "github",
   "name": "GitHub",
-  "description": "查看个人概览、贡献日历、仓库、Issue 和 Pull Request，并管理 Issue 与 Pull Request。",
-  "pe": "用户要求查看 GitHub 个人主页、贡献或开发者概览时调用 profile_card，在回答中展示实测卡片；用户要求管理仓库时先读取仓库、Issue 或 Pull Request，再执行写操作。写操作会向用户确认。不要在回答中输出访问令牌。个人概览里的仓库与 Stars 仅统计公开自有仓库，主要语言按公开仓库的主语言统计。",
-  "version": "1.2.1",
+  "description": "查看个人概览、贡献日历和仓库概览卡片，以及管理 Issue 与 Pull Request。",
+  "pe": "用户要求查看 GitHub 个人主页、贡献或开发者概览时调用 profile_card；要求查看某个仓库的状态、数据或概览时调用 repo_card，并在回答中展示实测卡片。若仓库名不明确，先用 repos 查找。用户要求管理仓库时先读取仓库、Issue 或 Pull Request，再执行写操作。写操作会向用户确认。不要在回答中输出访问令牌。个人概览里的仓库与 Stars 仅统计公开自有仓库，主要语言按公开仓库的主语言统计。仓库概览中的技术栈来自主语言和 package.json 推断，热门标签表示 Stars 不少于 1000。",
+  "version": "1.3.0",
   "uiProtocol": "cuebo-v1",
   "capabilities": ["generative_ui"],
   "files": {
@@ -25,6 +25,22 @@
       "name": "profile_card",
       "description": "查询当前 GitHub 账号，展示个人统计、今年贡献日历与主要语言卡片。",
       "parameters": {}
+    },
+    {
+      "name": "repo_card",
+      "description": "查询指定 GitHub 仓库，展示仓库统计、版本信息、最近六周提交活动与可识别技术栈卡片。",
+      "parameters": {
+        "owner": {
+          "type": "string",
+          "description": "仓库所有者或组织名。",
+          "required": true
+        },
+        "repo": {
+          "type": "string",
+          "description": "仓库名。",
+          "required": true
+        }
+      }
     },
     {
       "name": "repos",
