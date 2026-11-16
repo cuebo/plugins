@@ -18,7 +18,7 @@ for (let offset = 370; offset >= 0; offset--) {
 }
 const firstRepositories = Array.from({length: 100}, (_, index) => ({
   stargazerCount: 1,
-  primaryLanguage: {name: index < 70 ? "Python" : "TypeScript"},
+  primaryLanguage: {name: index < 70 ? "Python" : index < 90 ? "TypeScript" : "Rust"},
 }));
 const secondRepositories = Array.from({length: 28}, () => ({
   stargazerCount: 2,
@@ -95,7 +95,13 @@ assert(nodes.some(node => node.image && node.image.shape === "PLUGIN_IMAGE_SHAPE
 const heatmap = nodes.find(node => node.calendarHeatmap);
 assert(heatmap && heatmap.calendarHeatmap.days.length > 300);
 assert(nodes.some(node => node.text && node.text.text === "156"));
-assert(nodes.some(node => node.chart && node.chart.kind === "PLUGIN_CHART_KIND_AREA"));
+assert(!nodes.some(node => node.chart));
+const header = nodes.find(node => node.id === "profile-header").stack.children;
+assert.deepStrictEqual(header.map(node => node.id), ["profile-avatar", "profile-identity", "profile-brand"]);
+assert.deepStrictEqual(header[1].stack.children.map(node => node.id), ["profile-name", "profile-login"]);
+const languageGrid = nodes.find(node => node.id === "profile-languages").grid;
+assert.strictEqual(languageGrid.columns, 4);
+assert.strictEqual(languageGrid.children.length, 4);
 assert(root.children.some(node => node.id === "profile-languages-card"));
 assert(JSON.parse(tools.repos("{}")).ok);
 if (process.env.CUEBO_CARD_SAMPLE) {

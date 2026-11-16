@@ -3,7 +3,7 @@
   "name": "GitHub",
   "description": "查看个人概览、贡献日历、仓库、Issue 和 Pull Request，并管理 Issue 与 Pull Request。",
   "pe": "用户要求查看 GitHub 个人主页、贡献或开发者概览时调用 profile_card，在回答中展示实测卡片；用户要求管理仓库时先读取仓库、Issue 或 Pull Request，再执行写操作。写操作会向用户确认。不要在回答中输出访问令牌。个人概览里的仓库与 Stars 仅统计公开自有仓库，主要语言按公开仓库的主语言统计。",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "uiProtocol": "cuebo-v1",
   "capabilities": ["generative_ui"],
   "files": {
@@ -23,7 +23,7 @@
   "tools": [
     {
       "name": "profile_card",
-      "description": "查询当前 GitHub 账号，展示个人统计、今年贡献日历、近 30 天活动与主要语言卡片。",
+      "description": "查询当前 GitHub 账号，展示个人统计、今年贡献日历与主要语言卡片。",
       "parameters": {}
     },
     {

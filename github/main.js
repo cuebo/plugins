@@ -96,8 +96,6 @@ function profileTile(id, title, value, symbol, accent) {
   ]}};
 }
 
-function profileDateUTC(date) { return date.toISOString().slice(0,10); }
-
 registerTool("profile_card", function() {
   var firstQuery = "query($cursor:String){viewer{login name avatarUrl(size:128) url followers{totalCount} following{totalCount} " +
     "repositories(first:100,after:$cursor,ownerAffiliations:[OWNER],privacy:PUBLIC){" +
@@ -167,22 +165,15 @@ registerTool("profile_card", function() {
     if (!byDate[allDays[i].date]) break;
     streak++;
   }
-  var activity = [];
-  for (var offset=29; offset>=0; offset--) {
-    var date = new Date(Date.UTC(year,today.getUTCMonth(),today.getUTCDate()-offset));
-    var key = profileDateUTC(date);
-    activity.push({label:key.slice(5),value:byDate[key] || 0});
-  }
-
   var avatar = typeof viewer.avatarUrl === "string" && /^https:\/\//.test(viewer.avatarUrl) ? viewer.avatarUrl : "";
   var headerChildren = [];
   if (avatar) headerChildren.push({id:"profile-avatar",image:{url:avatar,width:64,height:64,
     shape:"PLUGIN_IMAGE_SHAPE_CIRCLE",borderWidth:3,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
   headerChildren.push({id:"profile-identity",stack:{spacing:3,children:[
     profileText("profile-name",viewer.name || viewer.login,"PLUGIN_TEXT_STYLE_TITLE"),
-    profileText("profile-login","@" + viewer.login,"PLUGIN_TEXT_STYLE_CAPTION"),
-    {id:"profile-brand",badge:{text:"GitHub",appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}}
+    profileText("profile-login","@" + viewer.login,"PLUGIN_TEXT_STYLE_CAPTION")
   ]}});
+  headerChildren.push({id:"profile-brand",badge:{text:"GitHub",appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}});
   var children = [
     {id:"profile-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:12,children:headerChildren}},
     {id:"profile-stats",grid:{columns:2,spacing:7,children:[
@@ -198,15 +189,11 @@ registerTool("profile_card", function() {
     {id:"profile-calendar-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
       {id:"profile-calendar",calendarHeatmap:{title:year + " 年贡献活动",startDate:year + "-01-01",
         endDate:year + "-12-31",days:yearDays,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}
-    ]}},
-    {id:"profile-activity-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
-      profileText("profile-activity-title","近 30 天活动","PLUGIN_TEXT_STYLE_TITLE"),
-      {id:"profile-activity",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:105,points:activity,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}
     ]}}
   ];
   if (topLanguages.length) children.push({id:"profile-languages-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
     profileText("profile-languages-title","主要语言","PLUGIN_TEXT_STYLE_TITLE"),
-    {id:"profile-languages",grid:{columns:2,spacing:5,children:topLanguages.map(function(name,index) {
+    {id:"profile-languages",grid:{columns:4,spacing:5,children:topLanguages.map(function(name,index) {
       return {id:"profile-language-" + index,badge:{text:name,appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}};
     })}}
   ]}});
@@ -228,10 +215,10 @@ registerTool("profile_card", function() {
     children.forEach(function(item) {
       if (item.id === "profile-calendar-card") return;
       if (item.id === "profile-header") {
-        fallback.push({id:"profile-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:12,children:[
-          profileIcon("profile-avatar-fallback","person.crop.circle"),
-          headerChildren[headerChildren.length - 1]
-        ]}});
+        fallback.push({id:"profile-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:12,children:
+          [profileIcon("profile-avatar-fallback","person.crop.circle")].concat(headerChildren.filter(function(child) {
+            return child.id !== "profile-avatar";
+          }))}});
       } else {
         fallback.push(item);
       }
