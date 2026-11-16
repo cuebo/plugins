@@ -1,0 +1,32 @@
+{
+  "id": "server-status",
+  "name": "服务器状态",
+  "description": "将 Agent 实际采集的服务器或 NAS 指标展示为对话卡片",
+  "pe": "用户要求查看服务器或 NAS 状态时，先用该 Agent 已绑定的终端/SSH 环境执行只读查询，再调用 plugin_server_status_show_status 展示本轮实测结果。CPU 使用率须由两次 /proc/stat 采样计算，网络速率须由两次网卡字节计数采样计算；不要把 load average 当作 CPU 百分比，不要把累计字节数当作速率。内存使用率建议按 MemTotal 和 MemAvailable 计算，磁盘按目标挂载点 df 查询。温度仅在系统提供传感器读数时填写。未取得的字段不要推测或传入；连接失败时可传 online:false，只显示离线状态。卡片是一次查询的快照，回答中可补充采样时间和异常指标。",
+  "version": "1.0.0",
+  "uiProtocol": "cuebo-v1",
+  "capabilities": ["generative_ui"],
+  "files": {"main.js": "main.js"},
+  "tools": [
+    {
+      "name": "show_status",
+      "description": "把刚查询到的服务器或 NAS 状态显示成对话卡片；未知指标留空，不推测数值",
+      "parameters": {
+        "name": {"type": "string", "description": "服务器显示名称，如 NAS", "required": true},
+        "online": {"type": "boolean", "description": "本轮连接或查询成功为 true，失败为 false", "required": true},
+        "system": {"type": "string", "description": "实际查询到的系统名称，如 Linux · Ubuntu"},
+        "sampled_at": {"type": "string", "description": "实际采样时间；未知时省略"},
+        "uptime_seconds": {"type": "number", "description": "系统运行秒数"},
+        "cpu_cores": {"type": "number", "description": "逻辑 CPU 核数"},
+        "cpu_percent": {"type": "number", "description": "两次采样计算的 CPU 使用率，0 到 100"},
+        "memory_total_gb": {"type": "number", "description": "物理内存总量，GiB"},
+        "memory_percent": {"type": "number", "description": "按 MemAvailable 计算的内存使用率，0 到 100"},
+        "temperature_c": {"type": "number", "description": "实测温度，摄氏度；无传感器时省略"},
+        "network_upload_bps": {"type": "number", "description": "两次采样计算的上传速率，字节每秒"},
+        "network_download_bps": {"type": "number", "description": "两次采样计算的下载速率，字节每秒"},
+        "disk_percent": {"type": "number", "description": "目标文件系统已用比例，0 到 100"},
+        "disk_total_gb": {"type": "number", "description": "目标文件系统总容量，GiB"}
+      }
+    }
+  ]
+}

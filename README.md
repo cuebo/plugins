@@ -11,6 +11,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | [`basic-cards/`](basic-cards/) | App 内置的五种对话卡片；打开插件界面可查看 35 个组件示例 | App 内置 |
 | [`github/`](github/) | 查看仓库、Issue、PR，创建和修改 Issue、评论、创建和合并 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
+| [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
@@ -56,3 +57,7 @@ plugins/
 ## Imgur 插件
 
 导入 [`imgur/`](imgur/) 后，在 Agent 的插件配置中填写 Imgur Client ID。用户在当前消息附带一张图片并明确要求上传时，App 会展示图片和目标地址供确认；成功后返回分享直链。详见[插件说明](imgur/README.md)。
+
+## 服务器状态插件
+
+导入 [`server-status/`](server-status/) 后，把插件添加到已关联 SSH 环境并启用终端能力的 Agent。用户询问服务器状态时，Agent 先查询实际指标，再用插件生成一次性的原生监控卡片。详见[插件说明](server-status/README.md)。
