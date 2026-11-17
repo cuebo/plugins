@@ -112,9 +112,11 @@ registerTool("read_new_messages", function () {
   if (next !== null && next !== offset) {
     host.storage("put", "next-update-id", JSON.stringify(next));
   }
+  var cardShown = telegramSafeCard(function () { return telegramMessagesCard(messages); });
   return JSON.stringify({messages: messages, count: messages.length,
     new_join_requests: newJoinRequests,
-    has_more: updates.length === 100 || (messages.length === 30 && i < updates.length - 1)});
+    has_more: updates.length === 100 || (messages.length === 30 && i < updates.length - 1),
+    card_shown: cardShown});
 });
 
 registerCallback("group_selected", function (responseJSON) {
@@ -202,9 +204,208 @@ registerTool("send_message", function (raw) {
       error: parseMode && /parse entities/i.test(payload.description || "") ?
         "MarkdownV2 格式无效，请检查转义" : "Telegram 拒绝发送，请检查群 ID 和机器人的发言权限"});
   }
-  return JSON.stringify({ok: true, chat_id: String(payload.result.chat.id),
-    message_id: payload.result.message_id, date: payload.result.date});
+  var sent = {ok: true, chat_id: String(payload.result.chat.id),
+    message_id: payload.result.message_id, date: payload.result.date};
+  sent.card_shown = telegramSafeCard(function () { return telegramSentCard(sent, args.text, null); });
+  return JSON.stringify(sent);
 });
+
+function telegramCardText(id, value, style, accent) {
+  var item = {text: String(value), style: style};
+  if (accent) item.appearance = {accent: accent};
+  return {id: id, text: item};
+}
+
+function telegramCardIcon(id, symbol, accent) {
+  return {id: id, icon: {appearance: {accent: accent, iconSource: {systemName: symbol}}}};
+}
+
+function telegramCardBadge(id, value, accent) {
+  return {id: id, badge: {text: String(value), appearance: {
+    accent: accent, size: "PLUGIN_COMPONENT_SIZE_COMPACT"}}};
+}
+
+function telegramCardHeader(id, name, subtitle, badge, symbol, accent) {
+  return {id: id + "-head", stack: {axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL", spacing: 10, children: [
+    telegramCardIcon(id + "-icon", symbol, accent),
+    {id: id + "-identity", stack: {spacing: 4, children: [
+      telegramCardText(id + "-name", name, "PLUGIN_TEXT_STYLE_TITLE"),
+      telegramCardText(id + "-sub", subtitle, "PLUGIN_TEXT_STYLE_CAPTION")
+    ]}},
+    telegramCardBadge(id + "-badge", badge, accent)
+  ]}};
+}
+
+function telegramCardShow(id, title, children) {
+  try {
+    var card = {id: "telegram" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),
+      title: title, components: [{id: id + "-root", card: {
+        appearance: {variant: "PLUGIN_COMPONENT_VARIANT_DARK"}, children: children}}]};
+    var shown = JSON.parse(host.ui("show", JSON.stringify(card)));
+    return shown && shown.ok === true;
+  } catch (_) {
+    // A display failure must never turn a completed Telegram write into a retryable failure.
+    return false;
+  }
+}
+
+function telegramSafeCard(render) {
+  try { return render(); } catch (_) { return false; }
+}
+
+function telegramCardShort(value, limit) {
+  var content = String(value == null ? "" : value).replace(/\s+/g, " ").trim();
+  return content.length > limit ? content.slice(0, limit - 1) + "…" : content;
+}
+
+function telegramCardTime(seconds) {
+  var value = Number(seconds);
+  if (!isFinite(value) || value <= 0) return "时间未知";
+  var date = new Date(value * 1000);
+  if (!isFinite(date.getTime())) return "时间未知";
+  var time = (date.getHours() < 10 ? "0" : "") + date.getHours() + ":" +
+    (date.getMinutes() < 10 ? "0" : "") + date.getMinutes();
+  var today = new Date();
+  return date.toDateString() === today.toDateString() ? "今天 " + time :
+    (date.getMonth() + 1) + "/" + date.getDate() + " " + time;
+}
+
+function telegramKnownGroup(chatID) {
+  try {
+    var groups = JSON.parse(host.storage("get", "known-groups"));
+    var found = Array.isArray(groups) && groups.filter(function (item) {
+      return String(item.id) === String(chatID);
+    })[0];
+    return found && found.title ? telegramCardShort(found.title, 60) : String(chatID);
+  } catch (_) { return String(chatID); }
+}
+
+function telegramMessagesCard(messages) {
+  if (!messages.length) return false;
+  var id = "tg-new", accent = "PLUGIN_ACCENT_BLUE";
+  var firstGroup = String(messages[0].chat_id);
+  var oneGroup = messages.every(function (item) { return String(item.chat_id) === firstGroup; });
+  var groupTitle = oneGroup ? telegramCardShort(messages[0].chat_title || firstGroup, 40) : "多个群组";
+  var recent = messages.slice(-5).reverse();
+  var children = [
+    telegramCardHeader(id, groupTitle, "Telegram · 本次读取", messages.length + " 条新消息",
+      "paperplane.fill", accent),
+    telegramCardText(id + "-desc", "只展示 Bot 此次收到的群组更新，不包含更早历史。",
+      "PLUGIN_TEXT_STYLE_CAPTION"),
+    {id: id + "-list", list: {title: "新消息", appearance: {accent: accent}, items:
+      recent.map(function (message) {
+        var sender = telegramCardShort(message.sender || "未知发送者", 30);
+        var prefix = oneGroup ? "" : telegramCardShort(message.chat_title || message.chat_id, 22) + " · ";
+        return {title: prefix + sender + " · " + telegramCardTime(message.date),
+          subtitle: telegramCardShort(message.text || "[非文字消息]", 140),
+          value: {text: "#" + message.message_id}};
+      })}}
+  ];
+  if (messages.length > recent.length) children.push(telegramCardText(id + "-more",
+    "卡片展示最近 " + recent.length + " 条，完整结果共 " + messages.length + " 条。",
+    "PLUGIN_TEXT_STYLE_CAPTION"));
+  var topic = oneGroup && recent[0].message_thread_id;
+  var footer = [];
+  if (topic) footer.push(telegramCardBadge(id + "-topic", "话题 #" + topic, accent));
+  footer.push(telegramCardText(id + "-hint", "回复需确认", "PLUGIN_TEXT_STYLE_CAPTION"));
+  children.push({id: id + "-footer", stack: {axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL",
+    spacing: 8, children: footer}});
+  return telegramCardShow(id, "新消息", children);
+}
+
+function telegramGroupCard(info) {
+  var id = "tg-group", accent = "PLUGIN_ACCENT_CYAN";
+  var type = info.type === "supergroup" ? "超级群" : info.type === "group" ? "群组" :
+    (info.type || "类型未知");
+  function metric(key, name, value, symbol) {
+    return {id: id + "-" + key, card: {appearance: {variant: "PLUGIN_COMPONENT_VARIANT_DARK"},
+      children: [{id: id + "-" + key + "-head", stack: {
+        axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL", spacing: 6, children: [
+          telegramCardIcon(id + "-" + key + "-icon", symbol, accent),
+          telegramCardText(id + "-" + key + "-title", name, "PLUGIN_TEXT_STYLE_CAPTION")
+        ]}}, telegramCardText(id + "-" + key + "-value", value,
+          "PLUGIN_TEXT_STYLE_DISPLAY", accent)]}};
+  }
+  var admins = info.administrators || [];
+  var children = [
+    telegramCardHeader(id, telegramCardShort(info.title || info.chat_id, 42),
+      "Telegram · 群组资料", type, "person.2.fill", accent),
+    telegramCardText(id + "-description", telegramCardShort(info.description || "暂无群组简介", 220),
+      "PLUGIN_TEXT_STYLE_CAPTION"),
+    {id: id + "-stats", grid: {columns: 2, spacing: 7, children: [
+      metric("members", "成员", info.member_count == null ? "暂不可用" :
+        Number(info.member_count).toLocaleString(), "person.3.fill"),
+      metric("admins", "管理员", info.warnings.indexOf("无法读取管理员") >= 0 ? "暂不可用" :
+        String(admins.length) + (info.admin_count_limited ? "+" : ""),
+        "person.crop.circle.badge.checkmark")
+    ]}},
+    {id: id + "-details", descriptionList: {title: "群组信息", items: [
+      {title: "群组 ID", value: {text: info.chat_id}},
+      {title: "群组类型", value: {text: type}}
+    ]}}
+  ];
+  if (admins.length) children.push({id: id + "-admin-list", list: {title: "管理员",
+    appearance: {accent: accent}, items: admins.slice(0, 4).map(function (admin) {
+      return {title: telegramCardShort(admin.username || admin.user_id, 50),
+        subtitle: admin.status === "creator" ? "群主" : "管理员",
+        value: {text: admin.user_id}};
+    })}});
+  children.push(telegramCardText(id + "-note",
+    info.warnings.length ? info.warnings.join(" · ") : "群组资料来自 Telegram 当前查询结果。",
+    "PLUGIN_TEXT_STYLE_CAPTION"));
+  return telegramCardShow(id, "群组资料", children);
+}
+
+function telegramJoinCard(pending) {
+  var id = "tg-join", accent = "PLUGIN_ACCENT_ORANGE";
+  var oneGroup = pending.length > 0 && pending.every(function (item) {
+    return String(item.chat_id) === String(pending[0].chat_id);
+  });
+  var group = oneGroup ? telegramCardShort(pending[0].chat_title || pending[0].chat_id, 35) :
+    "所有群组";
+  var children = [telegramCardHeader(id, "入群申请", group + " · 待处理",
+    pending.length + " 位申请者", "person.crop.circle.badge.questionmark", accent)];
+  if (pending.length) children.push({id: id + "-list", list: {title: "申请者",
+    appearance: {accent: accent}, items: pending.slice(0, 5).map(function (request) {
+      return {title: telegramCardShort(request.username ? "@" + request.username : request.user_id, 40),
+        subtitle: telegramCardTime(request.date) + " · 申请加入 " +
+          telegramCardShort(request.chat_title || request.chat_id, 32)};
+    })}});
+  else children.push(telegramCardText(id + "-empty", "目前没有待处理的入群申请。",
+    "PLUGIN_TEXT_STYLE_CAPTION"));
+  if (pending.length > 5) children.push(telegramCardText(id + "-more",
+    "卡片展示最近 5 位，完整结果共 " + pending.length + " 位。", "PLUGIN_TEXT_STYLE_CAPTION"));
+  children.push({id: id + "-rule", card: {appearance: {variant: "PLUGIN_COMPONENT_VARIANT_DARK"},
+    children: [{id: id + "-rule-head", stack: {axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL",
+      spacing: 7, children: [telegramCardIcon(id + "-rule-icon", "checkmark.shield.fill", accent),
+        telegramCardText(id + "-rule-title", "处理前确认", "PLUGIN_TEXT_STYLE_TITLE")]}},
+      telegramCardText(id + "-rule-body", "批准或拒绝时，App 会明确展示申请者和目标群组。",
+        "PLUGIN_TEXT_STYLE_CAPTION")]}});
+  children.push(telegramCardText(id + "-note", "只显示 Bot 已收到、尚未处理的申请。",
+    "PLUGIN_TEXT_STYLE_CAPTION"));
+  return telegramCardShow(id, "入群申请", children);
+}
+
+function telegramSentCard(sent, messageText, replyID) {
+  if (!sent.ok) return false;
+  var id = "tg-sent", accent = "PLUGIN_ACCENT_GREEN";
+  var group = telegramKnownGroup(sent.chat_id);
+  var children = [telegramCardHeader(id, replyID ? "回复已发送" : "消息已发送",
+    "Telegram · 发送结果", "Telegram 已接收", "checkmark.circle.fill", accent),
+    {id: id + "-message", card: {appearance: {variant: "PLUGIN_COMPONENT_VARIANT_DARK"},
+      children: [telegramCardText(id + "-message-label", "发给「" + group + "」",
+        "PLUGIN_TEXT_STYLE_CAPTION"),
+        telegramCardText(id + "-message-body", telegramCardShort(messageText, 260),
+          "PLUGIN_TEXT_STYLE_TITLE")]}},
+    {id: id + "-meta", descriptionList: {title: "发送记录", items: [
+      {title: "群组", value: {text: group}},
+      {title: "消息 ID", value: {text: "#" + sent.message_id}},
+      {title: "发送时间", value: {text: telegramCardTime(sent.date)}}
+    ].concat(replyID ? [{title: "回复消息", value: {text: "#" + replyID}}] : [])}},
+    telegramCardText(id + "-note", "Telegram 已返回消息 ID；实际阅读状态不可查询。",
+      "PLUGIN_TEXT_STYLE_CAPTION")];
+  return telegramCardShow(id, "发送结果", children);
+}
 
 function telegramGroupID(value) {
   if (typeof value !== "string" || !/^-[1-9]\d*$/.test(value)) throw new Error("群组 Chat ID 无效");
@@ -265,11 +466,14 @@ function telegramAPI(method, body, write) {
   return {ok: true, data: payload.result};
 }
 
-function telegramSentMessage(result) {
+function telegramSentMessage(result, body) {
   if (!result.ok) return result;
   var message = result.data || {};
-  return {ok: true, chat_id: message.chat ? String(message.chat.id) : "",
+  var sent = {ok: true, chat_id: message.chat ? String(message.chat.id) : "",
     message_id: message.message_id, date: message.date};
+  sent.card_shown = telegramSafeCard(function () { return telegramSentCard(sent,
+    body.text, body.reply_parameters && body.reply_parameters.message_id); });
+  return sent;
 }
 
 registerTool("get_group_info", function (raw) { return telegramRun(raw, function (args) {
@@ -279,7 +483,7 @@ registerTool("get_group_info", function (raw) { return telegramRun(raw, function
   var count = telegramAPI("getChatMemberCount", {chat_id: chatID}, false);
   var admins = telegramAPI("getChatAdministrators", {chat_id: chatID}, false);
   var info = chat.data || {};
-  return {ok: true, chat_id: chatID, title: info.title || "", type: info.type || "",
+  var group = {ok: true, chat_id: chatID, title: info.title || "", type: info.type || "",
     description: String(info.description || "").slice(0, 1000),
     member_count: count.ok ? count.data : null,
     administrators: admins.ok && Array.isArray(admins.data) ? admins.data.slice(0, 30).map(function (item) {
@@ -287,6 +491,8 @@ registerTool("get_group_info", function (raw) { return telegramRun(raw, function
         (item.user.username || item.user.first_name || "") : "", status: item.status};
     }) : [], admin_count_limited: admins.ok && Array.isArray(admins.data) && admins.data.length > 30,
     warnings: [!count.ok ? "无法读取成员数" : null, !admins.ok ? "无法读取管理员" : null].filter(Boolean)};
+  group.card_shown = telegramSafeCard(function () { return telegramGroupCard(group); });
+  return group;
 }); });
 
 registerTool("get_member_status", function (raw) { return telegramRun(raw, function (args) {
@@ -302,7 +508,9 @@ registerTool("get_member_status", function (raw) { return telegramRun(raw, funct
 registerTool("list_join_requests", function () {
   var pending = JSON.parse(host.storage("get", "pending-join-requests"));
   if (!Array.isArray(pending)) pending = [];
-  return JSON.stringify({ok: true, requests: pending.slice(0, 50)});
+  pending = pending.slice(0, 50);
+  return JSON.stringify({ok: true, requests: pending,
+    card_shown: telegramSafeCard(function () { return telegramJoinCard(pending); })});
 });
 
 registerTool("reply_message", function (raw) { return telegramRun(raw, function (args) {
@@ -312,7 +520,7 @@ registerTool("reply_message", function (raw) { return telegramRun(raw, function 
   var parseMode = telegramFormat(args.format);
   if (parseMode) body.parse_mode = parseMode;
   if (args.message_thread_id != null) body.message_thread_id = telegramPositiveID(args.message_thread_id, "话题 ID");
-  return telegramSentMessage(telegramAPI("sendMessage", body, true));
+  return telegramSentMessage(telegramAPI("sendMessage", body, true), body);
 }); });
 
 registerTool("send_poll", function (raw) { return telegramRun(raw, function (args) {

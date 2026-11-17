@@ -2,6 +2,14 @@
 
 通过 Telegram Bot API 读取群组新消息、查看群与成员、回复消息和话题、发起投票，并执行受确认保护的群管理操作。读取时每次最多返回 30 条消息，并保存下次读取的 `update_id`；如果返回 `has_more: true`，可以继续调用。读取过的群会出现在 App 的群组选择列表中。
 
+## 状态卡片
+
+`read_new_messages` 有新消息时显示最近 5 条、`get_group_info` 显示群资料、`list_join_requests` 显示最多 5 位待处理申请者、`send_message` 和 `reply_message` 成功时显示发送记录。卡片只组合 App 的通用文字、图标、徽章、列表、网格和信息列表组件，不依赖 Telegram 专用原生组件。工具仍返回完整结构化结果；`card_shown` 表示卡片是否展示成功。
+
+发送记录表示 Telegram API 已返回消息 ID，不代表群成员已阅读。即使卡片展示失败，发送成功的工具结果仍会保留，不能因此自动重发。
+
+## 配置
+
 1. 在 Telegram 的 [@BotFather](https://t.me/BotFather) 创建专用 Bot，取得 Token。
 2. 将 Bot 加入要读取的群。若需要普通群消息，给 Bot 管理员权限，或在 BotFather 关闭 Group Privacy Mode 后重新加入群。请确保群成员知晓机器人能读取消息。
 3. 把本目录打成 ZIP，在 App 的「插件库 → ＋ → 导入 ZIP」中安装；给目标 Agent 挂载「Telegram 群消息」插件。
