@@ -22,8 +22,6 @@ function plugin(responses, failUI = false) {
     request: raw => {
       const request = JSON.parse(raw);
       const method = request.url.split("/").pop();
-      assert.ok(["getUpdates", "getChat", "getChatMemberCount", "getChatAdministrators",
-        "getChatMember"].includes(method), "write request is not allowed: " + method);
       requests.push(method);
       const result = responses[method];
       if (!result) throw new Error("Unexpected Telegram method: " + method);
@@ -128,16 +126,27 @@ function assertCard(card, title) {
 }
 
 {
+  const app = plugin({sendMessage: {chat: {id: -100123}, message_id: 382, date: now}});
+  const sent = JSON.parse(app.tools.send_message(JSON.stringify({chat_id: "-100123",
+    text: "今晚 8 点开始测试新版"})));
+  const replied = JSON.parse(app.tools.reply_message(JSON.stringify({chat_id: "-100123",
+    message_id: 381, text: "收到"})));
+  assert.equal(sent.ok, true);
+  assert.equal(replied.ok, true);
+  assert.equal(app.cards.length, 0, "write tools must not generate cards");
+  assert.deepEqual(app.requests, ["sendMessage", "sendMessage"]);
+}
+
+{
   const app = plugin({});
   const names = Object.keys(app.tools).sort();
-  assert.deepEqual(names, ["get_group_info", "get_member_status", "list_join_requests",
-    "read_new_messages"]);
+  assert.equal(names.length, 17);
   assert.deepEqual(names, manifest.tools.map(item => item.name).sort());
-  assert.ok(manifest.tools.every(item => !item.requiresApproval));
+  assert.equal(manifest.tools.filter(item => item.requiresApproval).length, 12);
   assert.equal(samples.length, 4);
 }
 
 if (process.env.TELEGRAM_CARD_SAMPLES) {
   fs.writeFileSync(process.env.TELEGRAM_CARD_SAMPLES, JSON.stringify(samples, null, 2));
 }
-console.log("Telegram read-only card tests passed");
+console.log("Telegram data cards and management tools tests passed");

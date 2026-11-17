@@ -124,6 +124,95 @@ registerTool("read_new_messages", function () {
     card_shown: cardShown});
 });
 
+registerCallback("group_selected", function (responseJSON) {
+  var response = JSON.parse(responseJSON);
+  if (response.cancelled) return JSON.stringify({cancelled: true});
+  var selected = response.selections[0].option_ids[0];
+  var groups = JSON.parse(host.storage("get", "known-groups"));
+  var group = Array.isArray(groups) && groups.filter(function (item) { return item.id === selected; })[0];
+  if (!group) {
+    var config = JSON.parse(host.config());
+    if (String(config.chat_id || "").trim() === selected) {
+      group = {id: selected, title: "已配置群组 " + selected};
+    }
+  }
+  if (!group) return JSON.stringify({error: "所选群组已不在列表中，请重新选择"});
+  return JSON.stringify({chat_id: group.id, chat_title: group.title});
+});
+
+registerTool("choose_group", function () {
+  var groups = JSON.parse(host.storage("get", "known-groups"));
+  if (!Array.isArray(groups)) groups = [];
+  var config = JSON.parse(host.config());
+  var configuredID = String(config.chat_id || "").trim();
+  if (configuredID && /^-?[0-9]+$/.test(configuredID) &&
+      !groups.some(function (item) { return item.id === configuredID; })) {
+    groups.unshift({id: configuredID, title: "已配置群组 " + configuredID});
+  }
+  if (!groups.length) {
+    return JSON.stringify({error: "还没有发现群组；请让 Bot 加入群并收到一条消息，然后先调用 read_new_messages"});
+  }
+  return host.choose(JSON.stringify({
+    title: "选择 Telegram 群组",
+    tabs: [{id: "groups", title: "群组", mode: "single",
+      options: groups.slice(0, 30).map(function (group) {
+        return {id: group.id, label: group.title.slice(0, 100), description: group.id};
+      })}]
+  }));
+});
+
+registerTool("send_message", function (raw) {
+  var args;
+  try { args = JSON.parse(raw || "{}"); } catch (_) {
+    return JSON.stringify({ok: false, error: "发送参数不是有效 JSON"});
+  }
+  if (typeof args.chat_id !== "string" || !/^-[1-9]\d*$/.test(args.chat_id)) {
+    return JSON.stringify({ok: false, error: "请提供目标群的负数 Chat ID"});
+  }
+  if (typeof args.text !== "string" || !args.text.trim() || args.text.length > 4096) {
+    return JSON.stringify({ok: false, error: "消息正文须为 1 到 4096 字符"});
+  }
+  var parseMode;
+  try { parseMode = telegramFormat(args.format); } catch (error) {
+    return JSON.stringify({ok: false, error: error.message});
+  }
+  var config = JSON.parse(host.config());
+  var token = String(config.bot_token || "").trim();
+  if (!/^\d+:[A-Za-z0-9_-]+$/.test(token)) {
+    return JSON.stringify({ok: false, error: "请在插件配置中填写有效的 Bot Token"});
+  }
+
+  var response;
+  try {
+    var sendBody = {chat_id: args.chat_id, text: args.text};
+    if (parseMode) sendBody.parse_mode = parseMode;
+    response = JSON.parse(host.request(JSON.stringify({
+      method: "POST",
+      url: "https://api.telegram.org/bot" + token + "/sendMessage",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(sendBody)
+    })));
+  } catch (_) {
+    // The server may have accepted the message before the connection failed.
+    // Host errors may also contain the token-bearing request URL.
+    return JSON.stringify({ok: false, delivery_unknown: true,
+      error: "请求结果未知，请先查看群组，勿自动重发"});
+  }
+
+  var payload;
+  try { payload = JSON.parse(response.body || "{}"); } catch (_) {
+    return JSON.stringify({ok: false, delivery_unknown: true,
+      error: "Telegram 响应无法解析，请先查看群组"});
+  }
+  if (response.status !== 200 || !payload.ok || !payload.result) {
+    return JSON.stringify({ok: false, status: payload.error_code || response.status,
+      error: parseMode && /parse entities/i.test(payload.description || "") ?
+        "MarkdownV2 格式无效，请检查转义" : "Telegram 拒绝发送，请检查群 ID 和机器人的发言权限"});
+  }
+  return JSON.stringify({ok: true, chat_id: String(payload.result.chat.id),
+    message_id: payload.result.message_id, date: payload.result.date});
+});
+
 function telegramCardText(id, value, style, accent) {
   var item = {text: String(value), style: style};
   if (accent) item.appearance = {accent: accent};
@@ -312,6 +401,19 @@ function telegramPositiveID(value, label) {
   return id;
 }
 
+function telegramText(value, label, limit) {
+  if (typeof value !== "string" || !value.trim() || value.length > limit) {
+    throw new Error(label + " 须为 1 到 " + limit + " 字符");
+  }
+  return value;
+}
+
+function telegramFormat(value) {
+  if (value == null || value === "" || value === "plain") return null;
+  if (value === "MarkdownV2") return "MarkdownV2";
+  throw new Error("格式只支持 plain 或 Telegram MarkdownV2");
+}
+
 function telegramRun(raw, fn) {
   try {
     var args = JSON.parse(raw || "{}");
@@ -322,10 +424,7 @@ function telegramRun(raw, fn) {
   }
 }
 
-function telegramAPI(method, body) {
-  if (["getChat", "getChatMemberCount", "getChatAdministrators", "getChatMember"].indexOf(method) < 0) {
-    return {ok: false, error: "此插件只允许读取 Telegram 数据"};
-  }
+function telegramAPI(method, body, write) {
   var token = String(JSON.parse(host.config()).bot_token || "").trim();
   if (!/^\d+:[A-Za-z0-9_-]+$/.test(token)) return {ok: false, error: "请配置有效的 Bot Token"};
   var response;
@@ -334,17 +433,26 @@ function telegramAPI(method, body) {
       url: "https://api.telegram.org/bot" + token + "/" + method,
       headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})));
   } catch (_) {
-    return {ok: false, error: "Telegram 网络请求失败"};
+    return {ok: false, delivery_unknown: !!write,
+      error: write ? "请求结果未知，请先到群里核对，勿自动重试" : "Telegram 网络请求失败"};
   }
   var payload;
   try { payload = JSON.parse(response.body || "{}"); } catch (_) {
-    return {ok: false, error: "Telegram 响应无法解析"};
+    return {ok: false, delivery_unknown: !!write, error: "Telegram 响应无法解析"};
   }
   if (response.status !== 200 || !payload.ok) {
     return {ok: false, status: payload.error_code || response.status,
-      error: "Telegram 查询失败，请检查目标和机器人权限"};
+      error: body.parse_mode && /parse entities/i.test(payload.description || "") ?
+        "MarkdownV2 格式无效，请检查转义" : "Telegram 拒绝操作，请检查目标和机器人权限"};
   }
   return {ok: true, data: payload.result};
+}
+
+function telegramSentMessage(result) {
+  if (!result.ok) return result;
+  var message = result.data || {};
+  return {ok: true, chat_id: message.chat ? String(message.chat.id) : "",
+    message_id: message.message_id, date: message.date};
 }
 
 registerTool("get_group_info", function (raw) { return telegramRun(raw, function (args) {
@@ -385,3 +493,76 @@ registerTool("list_join_requests", function () {
   return JSON.stringify({ok: true, requests: requests, current_status_unknown: true,
     card_shown: telegramSafeCard(function () { return telegramJoinCard(requests); })});
 });
+
+registerTool("reply_message", function (raw) { return telegramRun(raw, function (args) {
+  var body = {chat_id: telegramGroupID(args.chat_id),
+    reply_parameters: {message_id: telegramPositiveID(args.message_id, "消息 ID")},
+    text: telegramText(args.text, "回复正文", 4096)};
+  var parseMode = telegramFormat(args.format);
+  if (parseMode) body.parse_mode = parseMode;
+  if (args.message_thread_id != null) body.message_thread_id = telegramPositiveID(args.message_thread_id, "话题 ID");
+  return telegramSentMessage(telegramAPI("sendMessage", body, true));
+}); });
+
+registerTool("send_poll", function (raw) { return telegramRun(raw, function (args) {
+  var options = telegramText(args.options, "投票选项", 1500).split(/\r?\n/).map(function (item) { return item.trim(); });
+  if (options.length < 2 || options.length > 12 || options.some(function (item) { return !item || item.length > 100; })) {
+    throw new Error("投票需要 2 至 12 个选项，每项最多 100 字符");
+  }
+  var body = {chat_id: telegramGroupID(args.chat_id),
+    question: telegramText(args.question, "投票问题", 300),
+    options: options.map(function (item) { return {text: item}; }),
+    is_anonymous: args.is_anonymous !== false,
+    allows_multiple_answers: args.allows_multiple_answers === true};
+  if (args.message_thread_id != null) body.message_thread_id = telegramPositiveID(args.message_thread_id, "话题 ID");
+  var result = telegramAPI("sendPoll", body, true);
+  if (!result.ok) return result;
+  return {ok: true, chat_id: body.chat_id, message_id: result.data.message_id,
+    poll_id: result.data.poll ? result.data.poll.id : ""};
+}); });
+
+function telegramMessageAction(raw, method) { return telegramRun(raw, function (args) {
+  var body = {chat_id: telegramGroupID(args.chat_id), message_id: telegramPositiveID(args.message_id, "消息 ID")};
+  var result = telegramAPI(method, body, true);
+  return result.ok ? {ok: true, action: method, chat_id: body.chat_id, message_id: body.message_id} : result;
+}); }
+registerTool("pin_message", function (raw) { return telegramMessageAction(raw, "pinChatMessage"); });
+registerTool("unpin_message", function (raw) { return telegramMessageAction(raw, "unpinChatMessage"); });
+registerTool("delete_message", function (raw) { return telegramMessageAction(raw, "deleteMessage"); });
+
+function telegramMemberAction(raw, method, extra) { return telegramRun(raw, function (args) {
+  var body = {chat_id: telegramGroupID(args.chat_id), user_id: telegramPositiveID(args.user_id, "用户 ID")};
+  if (extra) extra(body, args);
+  var result = telegramAPI(method, body, true);
+  return result.ok ? {ok: true, action: method, chat_id: body.chat_id, user_id: String(body.user_id)} : result;
+}); }
+registerTool("restrict_member", function (raw) { return telegramMemberAction(raw, "restrictChatMember", function (body, args) {
+  body.permissions = {can_send_messages: false};
+  if (args.until_date != null) body.until_date = telegramPositiveID(args.until_date, "解除时间");
+}); });
+registerTool("unrestrict_member", function (raw) { return telegramMemberAction(raw, "restrictChatMember", function (body) {
+  body.permissions = {can_send_messages: true, can_send_audios: true, can_send_documents: true,
+    can_send_photos: true, can_send_videos: true, can_send_video_notes: true,
+    can_send_voice_notes: true, can_send_polls: true, can_send_other_messages: true,
+    can_add_web_page_previews: true};
+}); });
+registerTool("ban_member", function (raw) { return telegramMemberAction(raw, "banChatMember"); });
+registerTool("unban_member", function (raw) { return telegramMemberAction(raw, "unbanChatMember", function (body) {
+  body.only_if_banned = true;
+}); });
+
+function telegramJoinAction(raw, method) { return telegramRun(raw, function (args) {
+  var chatID = telegramGroupID(args.chat_id), userID = telegramPositiveID(args.user_id, "用户 ID");
+  var pending = JSON.parse(host.storage("get", "pending-join-requests"));
+  if (!Array.isArray(pending) || !pending.some(function (item) {
+    return item.chat_id === chatID && item.user_id === String(userID);
+  })) return {ok: false, error: "插件尚未收到这位用户的入群申请"};
+  var result = telegramAPI(method, {chat_id: chatID, user_id: userID}, true);
+  if (!result.ok) return result;
+  var remaining = pending.filter(function (item) { return item.chat_id !== chatID || item.user_id !== String(userID); });
+  var cacheUpdated = true;
+  try { host.storage("put", "pending-join-requests", JSON.stringify(remaining)); } catch (_) { cacheUpdated = false; }
+  return {ok: true, action: method, chat_id: chatID, user_id: String(userID), cache_updated: cacheUpdated};
+}); }
+registerTool("approve_join_request", function (raw) { return telegramJoinAction(raw, "approveChatJoinRequest"); });
+registerTool("decline_join_request", function (raw) { return telegramJoinAction(raw, "declineChatJoinRequest"); });

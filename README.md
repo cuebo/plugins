@@ -12,7 +12,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
 | [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
-| [`telegram-groups/`](telegram-groups/) | 只读展示群消息、群资料、成员状态和入群申请记录 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
+| [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
 
@@ -52,7 +52,7 @@ plugins/
 
 ## Telegram 群消息插件
 
-导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。插件仅提供四项只读查询，用通用组件展示新消息、群资料、成员状态和已收到的入群申请记录；不提供发送或群管理工具。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
+导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；回复、投票和群管理工具会在操作前请求确认。管理员操作需要给 Bot 相应权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
 
 ## Imgur 插件
 
