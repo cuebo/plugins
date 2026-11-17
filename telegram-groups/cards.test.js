@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const source = fs.readFileSync(__dirname + "/main.js", "utf8");
+const manifest = JSON.parse(fs.readFileSync(__dirname + "/plugin.json", "utf8"));
 const now = Math.floor(Date.now() / 1000);
 const samples = [];
 
@@ -21,6 +22,8 @@ function plugin(responses, failUI = false) {
     request: raw => {
       const request = JSON.parse(raw);
       const method = request.url.split("/").pop();
+      assert.ok(["getUpdates", "getChat", "getChatMemberCount", "getChatAdministrators",
+        "getChatMember"].includes(method), "write request is not allowed: " + method);
       requests.push(method);
       const result = responses[method];
       if (!result) throw new Error("Unexpected Telegram method: " + method);
@@ -75,8 +78,7 @@ function assertCard(card, title) {
   assert.match(assertCard(card, "新消息"), /第二条/);
   samples.push(card);
   assert.equal(card.components[0].card.children[2].list.items.length, 2);
-  const repeat = JSON.parse(app.tools.read_new_messages());
-  assert.equal(repeat.count, 2); // The mocked server ignores offsets; plugin still advances the offset.
+  assert.doesNotMatch(JSON.stringify(card), /回复需确认/);
 }
 
 {
@@ -93,42 +95,49 @@ function assertCard(card, title) {
 }
 
 {
+  const app = plugin({getChatMember: {user: {id: 10, username: "newdesigner"},
+    status: "restricted", can_send_messages: false, until_date: now + 3600}});
+  const result = JSON.parse(app.tools.get_member_status(JSON.stringify({chat_id: "-100123",
+    user_id: "10"})));
+  assert.equal(result.status, "restricted");
+  assert.equal(result.card_shown, true);
+  assert.match(assertCard(app.cards[0], "成员状态"), /受限成员/);
+  samples.push(app.cards[0]);
+}
+
+{
   const app = plugin({});
   app.storage["pending-join-requests"] = [{chat_id: "-100123", chat_title: "产品讨论群",
     user_id: "10", username: "newdesigner", date: now}];
   const result = JSON.parse(app.tools.list_join_requests());
   assert.equal(result.requests.length, 1);
+  assert.equal(result.current_status_unknown, true);
   assert.equal(result.card_shown, true);
-  assert.match(assertCard(app.cards[0], "入群申请"), /newdesigner/);
+  assert.match(assertCard(app.cards[0], "入群申请记录"), /newdesigner/);
+  assert.doesNotMatch(JSON.stringify(app.cards[0]), /处理前确认|批准或拒绝/);
   samples.push(app.cards[0]);
 }
 
 {
-  const app = plugin({sendMessage: {chat: {id: -100123}, message_id: 382, date: now}});
-  app.storage["known-groups"] = [{id: "-100123", title: "产品讨论群"}];
-  const result = JSON.parse(app.tools.send_message(JSON.stringify({chat_id: "-100123",
-    text: "今晚 8 点开始测试新版"})));
+  const app = plugin({getChatMember: {user: {id: 10}, status: "member"}}, true);
+  const result = JSON.parse(app.tools.get_member_status(JSON.stringify({chat_id: "-100123",
+    user_id: "10"})));
   assert.equal(result.ok, true);
-  assert.equal(result.card_shown, true);
-  assert.match(assertCard(app.cards[0], "发送结果"), /今晚 8 点开始测试新版/);
-  samples.push(app.cards[0]);
-  assert.match(JSON.stringify(app.cards[0]), /Telegram 已接收/);
-  assert.deepEqual(app.requests, ["sendMessage"]);
+  assert.equal(result.card_shown, false);
+  assert.deepEqual(app.requests, ["getChatMember"]);
 }
 
 {
-  const app = plugin({sendMessage: {chat: {id: -100123}, message_id: 383, date: now}}, true);
-  const sent = JSON.parse(app.tools.send_message(JSON.stringify({chat_id: "-100123", text: "收到"})));
-  const replied = JSON.parse(app.tools.reply_message(JSON.stringify({chat_id: "-100123",
-    message_id: 381, text: "已回复"})));
-  assert.equal(sent.ok, true);
-  assert.equal(sent.card_shown, false);
-  assert.equal(replied.ok, true);
-  assert.equal(replied.card_shown, false);
-  assert.deepEqual(app.requests, ["sendMessage", "sendMessage"]);
+  const app = plugin({});
+  const names = Object.keys(app.tools).sort();
+  assert.deepEqual(names, ["get_group_info", "get_member_status", "list_join_requests",
+    "read_new_messages"]);
+  assert.deepEqual(names, manifest.tools.map(item => item.name).sort());
+  assert.ok(manifest.tools.every(item => !item.requiresApproval));
+  assert.equal(samples.length, 4);
 }
 
 if (process.env.TELEGRAM_CARD_SAMPLES) {
   fs.writeFileSync(process.env.TELEGRAM_CARD_SAMPLES, JSON.stringify(samples, null, 2));
 }
-console.log("Telegram card and send-result tests passed");
+console.log("Telegram read-only card tests passed");
