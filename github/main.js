@@ -185,7 +185,9 @@ registerTool("repo_card", function(raw) {
   var query = "query($owner:String!,$repo:String!){repository(owner:$owner,name:$repo){" +
     "name nameWithOwner description url isPrivate stargazerCount forkCount " +
     "issues(states:OPEN){totalCount} pullRequests(states:OPEN){totalCount} watchers{totalCount} " +
-    "primaryLanguage{name} licenseInfo{spdxId name} latestRelease{tagName} pushedAt}}";
+    "primaryLanguage{name} licenseInfo{spdxId name} latestRelease{tagName} pushedAt " +
+    "branches:refs(refPrefix:\"refs/heads/\",first:1){totalCount} " +
+    "tags:refs(refPrefix:\"refs/tags/\",first:1){totalCount}}}";
   var answer = profileGraphQL(query,{owner:owner,repo:repoName});
   if (!answer.ok) return JSON.stringify(answer);
   var repository = answer.data.repository;
@@ -209,52 +211,55 @@ registerTool("repo_card", function(raw) {
     return {label:index === weekly.length - 1 ? "本周" : "W-" + (weekly.length - index - 1),
       value:Math.max(0,Number(value) || 0)};
   });
+  var daily = repositoryHTTP("/repos/" + cleanName(canonicalOwner,"owner") + "/" +
+    cleanName(canonicalRepo,"repo") + "/stats/commit_activity");
+  var days = [], commitTotal = 0;
+  if (daily.ok && daily.status === 200 && Array.isArray(daily.data)) {
+    daily.data.slice(-52).forEach(function(week) {
+      if (!Number.isFinite(week.week) || !Array.isArray(week.days) || week.days.length !== 7) return;
+      week.days.forEach(function(rawCount,index) {
+        var date = new Date((week.week + index * 86400) * 1000);
+        var value = Math.max(0,Number(rawCount) || 0);
+        if (!Number.isFinite(date.getTime())) return;
+        days.push({date:date.toISOString().slice(0,10),value:value});
+        commitTotal += value;
+      });
+    });
+  }
   var stack = repositoryTechnology(repository);
   var license = repository.licenseInfo && repository.licenseInfo.spdxId;
   if (!license || license === "NOASSERTION") license = repository.licenseInfo && repository.licenseInfo.name || "未标注";
   var release = repository.latestRelease && repository.latestRelease.tagName || "暂无发布";
   var description = (repository.description || "暂无仓库简介").slice(0,180);
-  var header = [profileIcon("repo-icon","chevron.left.forwardslash.chevron.right"),
-    {id:"repo-identity",stack:{spacing:2,children:[
-      profileText("repo-name",repository.name,"PLUGIN_TEXT_STYLE_TITLE"),
-      profileText("repo-owner",canonicalOwner + " · " + (repository.isPrivate ? "private" : "public"),"PLUGIN_TEXT_STYLE_CAPTION")
-    ]}},repositoryBadge("repo-brand","GitHub")];
+  function meta(id, symbol, value) {
+    return {id:id,stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:5,children:[
+      profileIcon(id+"-icon",symbol),profileText(id+"-text",value,"PLUGIN_TEXT_STYLE_CAPTION")
+    ]}};
+  }
   var children = [
-    {id:"repo-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:8,children:header}},
-    {id:"repo-labels",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:6,children:[
-      repositoryBadge("repo-popular",repository.stargazerCount >= 1000 ? "热门仓库" : "仓库概览"),
-      repositoryBadge("repo-visibility",repository.isPrivate ? "私有" : "公开")
+    {id:"repo-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:8,children:[
+      profileIcon("repo-icon","book.closed"),
+      profileText("repo-name",repository.name,"PLUGIN_TEXT_STYLE_DISPLAY","PLUGIN_ACCENT_BLUE"),
+      {id:"repo-star-count",badge:{text:"★ " + profileCount(repository.stargazerCount),
+        appearance:{accent:"PLUGIN_ACCENT_GRAY"}}}
     ]}},
-    profileText("repo-description",description,"PLUGIN_TEXT_STYLE_CAPTION"),
-    {id:"repo-stats",grid:{columns:2,spacing:7,children:[
-      profileTile("repo-stars","Stars",profileCount(repository.stargazerCount),"star"),
-      profileTile("repo-forks","Forks",profileCount(repository.forkCount),"tuningfork"),
-      profileTile("repo-issues","Open Issues",profileCount(repository.issues.totalCount),"exclamationmark.circle"),
-      profileTile("repo-pulls","Pull Requests",profileCount(repository.pullRequests.totalCount),"arrow.triangle.pull"),
-      profileTile("repo-watchers","Watchers",profileCount(repository.watchers.totalCount),"eye"),
-      profileTile("repo-contributors","Contributors",contributors == null ? "暂不可用" : profileCount(contributors),"person.2")
+    profileText("repo-description",description,"PLUGIN_TEXT_STYLE_SUBTITLE"),
+    {id:"repo-meta",grid:{columns:2,spacing:8,children:[
+      meta("repo-language","circle.fill",repository.primaryLanguage && repository.primaryLanguage.name || "语言未识别"),
+      meta("repo-license","scale.3d",license),
+      meta("repo-branches","point.topleft.down.curvedto.point.bottomright.up",repository.branches ? repository.branches.totalCount + " 分支" : "分支数未知"),
+      meta("repo-tags","tag",repository.tags ? repository.tags.totalCount + " 标签" : "标签数未知"),
+      meta("repo-updated","clock",repositoryUpdated(repository.pushedAt))
     ]}},
-    {id:"repo-meta",grid:{columns:2,spacing:7,children:[
-      repositoryInfo("repo-language","主要语言",repository.primaryLanguage && repository.primaryLanguage.name || "未识别"),
-      repositoryInfo("repo-license","许可证",license),
-      repositoryInfo("repo-release","最新版本",release,"PLUGIN_ACCENT_GREEN"),
-      repositoryInfo("repo-updated","最近代码更新",repositoryUpdated(repository.pushedAt),"PLUGIN_ACCENT_GREEN")
-    ]}},
-    {id:"repo-activity",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
-      profileText("repo-activity-title","每周提交活动","PLUGIN_TEXT_STYLE_TITLE")
-    ].concat(points.length ? [{id:"repo-activity-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:130,
-      points:points,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}] : [
-        profileText("repo-activity-empty",activity.status === 202 ? "GitHub 正在生成统计，请稍后再试" :
-          "每周提交统计暂不可用","PLUGIN_TEXT_STYLE_CAPTION")
+    {id:"repo-divider",divider:{}},
+    {id:"repo-activity",stack:{spacing:8,children:[
+      profileText("repo-activity-title",days.length ? commitTotal + " 次提交 · 近一年" : "近一年提交活动","PLUGIN_TEXT_STYLE_TITLE")
+    ].concat(days.length ? [{id:"repo-activity-heatmap",calendarHeatmap:{title:"",startDate:days[0].date,
+      endDate:days[days.length-1].date,days:days,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}] : [
+        profileText("repo-activity-empty",daily.status === 202 ? "GitHub 正在生成统计，请稍后再试" :
+          "近一年提交统计暂不可用","PLUGIN_TEXT_STYLE_CAPTION")
       ])}}
   ];
-  if (stack.length) children.push({id:"repo-stack",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
-    profileText("repo-stack-title","技术栈 · 从仓库文件推断","PLUGIN_TEXT_STYLE_TITLE"),
-    {id:"repo-stack-tags",grid:{columns:3,spacing:5,children:stack.map(function(name,index) {
-      return repositoryBadge("repo-stack-" + index,name);
-    })}}
-  ]}});
-  children.push(profileText("repo-data-note","实时查询快照 · 热门标签为 Stars ≥ 1000","PLUGIN_TEXT_STYLE_CAPTION"));
   var card = {id:"githubrepo" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),
     title:"GitHub 仓库概览",components:[{id:"repo-root",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},
       onTap:{openURL:repository.url},children:children}}]};
@@ -265,7 +270,8 @@ registerTool("repo_card", function(raw) {
     contributors:contributors,primary_language:repository.primaryLanguage && repository.primaryLanguage.name || null,
     latest_release:repository.latestRelease && repository.latestRelease.tagName || null,
     technologies:stack,weekly_commit_counts:points.map(function(point) { return point.value; }),
-    weekly_activity_available:points.length > 0});
+    weekly_activity_available:points.length > 0,daily_activity_available:days.length > 0,
+    commits_last_year:days.length ? commitTotal : null});
 });
 
 registerTool("profile_card", function() {
