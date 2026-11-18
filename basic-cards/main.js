@@ -47,10 +47,11 @@ registerTool("show_metrics", function(raw) {
     var trend = typeof item.trend === "string" ? item.trend : "";
     var icon = typeof item.icon === "string" ? item.icon.trim() : "";
     if ((change && ["up","down","flat"].indexOf(trend) < 0) || (!change && trend)) throw new Error("趋势无效");
+    if (change.length > 1000) throw new Error("变化文案过长");
     if (icon && !/^[a-z0-9][a-z0-9.-]{0,79}$/.test(icon)) throw new Error("图标名称无效");
     return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),change:change,trend:trend,icon:icon};
   });
-  return showContent("指标",[{id:"metrics",grid:{columns:2,spacing:10,
+  return showContent("指标",[{id:"metricCards",grid:{columns:2,spacing:10,
     appearance:{container:"PLUGIN_CONTAINER_STYLE_NONE"},
     children:items.map(function(item,index) {
       var id = "metric-" + index;
@@ -67,7 +68,9 @@ registerTool("show_metrics", function(raw) {
       // Reserve the caption line even when this metric has no change text,
       // so adjacent cards with and without captions keep the same height.
       children.push({id:id + "-change",text:{text:item.change || "\u00a0",style:"PLUGIN_TEXT_STYLE_CAPTION"}});
-      return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},expandOnTap:true,children:children}};
+      return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
+        onTap:{plugin:{actionId:"openMetricDetail",params:{label:item.label,value:item.value,
+          change:item.change,trend:item.trend,icon:item.icon}}},children:children}};
     })
   }}],items.length);
 });

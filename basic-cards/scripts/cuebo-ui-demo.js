@@ -621,6 +621,32 @@ globalThis.detail = function(ctx) {
 };
 
 globalThis.sheet = function(ctx) {
+  if (ctx.route === "metric-detail") {
+    var metric = JSON.parse(host.storage("get", "active-metric-detail"));
+    if (!metric || !metric.label || !metric.value) {
+      return {title: "指标详情", components: [{id: "metric-empty", stateBlock: {
+        kind: "PLUGIN_STATE_EMPTY", title: "指标已失效", message: "请重新生成指标卡片。"
+      }}]};
+    }
+    var accent = metric.trend === "up" ? "PLUGIN_ACCENT_GREEN"
+      : metric.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
+    var heading = [{id: "metric-detail-label", text: {
+      text: metric.label, style: "PLUGIN_TEXT_STYLE_TITLE"
+    }}];
+    if (metric.icon) heading.unshift({id: "metric-detail-icon", icon: {
+      appearance: {accent: accent, iconSource: {systemName: metric.icon}}
+    }});
+    var components = [
+      {id: "metric-detail-heading", stack: {axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL", spacing: 10, children: heading}},
+      {id: "metric-detail-value", text: {text: metric.value, style: "PLUGIN_TEXT_STYLE_DISPLAY"}}
+    ];
+    if (metric.change) components.push({id: "metric-detail-change", text: {
+      text: metric.change, style: "PLUGIN_TEXT_STYLE_SUBTITLE"
+    }});
+    return {title: "指标详情", components: [{id: "metric-detail-content", stack: {
+      spacing: 22, children: components
+    }}]};
+  }
   if (ctx.route === "navigation-danger") {
     return {
       title: "危险操作示例",
@@ -634,6 +660,15 @@ globalThis.sheet = function(ctx) {
 };
 
 globalThis.actions = {
+  openMetricDetail: function(ctx) {
+    var params = ctx.params || {};
+    if (!params.label || !params.value) return {effects: [{toast: {text: "指标数据不可用"}}]};
+    host.storage("put", "active-metric-detail", JSON.stringify({
+      label: params.label, value: params.value, change: params.change || "",
+      trend: params.trend || "", icon: params.icon || ""
+    }));
+    return {effects: [{navigate: {surface: "sheet", route: "metric-detail"}}]};
+  },
   openDetail: function(ctx) {
     return {
       effects: [
