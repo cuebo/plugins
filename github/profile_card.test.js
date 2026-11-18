@@ -100,8 +100,8 @@ assert(nodes.some(node => node.text && node.text.text === "156"));
 assert(!nodes.some(node => node.chart));
 const header = nodes.find(node => node.id === "profile-header").stack.children;
 assert.deepStrictEqual(header.map(node => node.id), ["profile-avatar", "profile-identity"]);
-assert.deepStrictEqual(header[1].stack.children.map(node => node.id), ["profile-login", "profile-name", "profile-bio", "profile-link"]);
-assert.strictEqual(header[1].stack.children[0].badge.text, "@devuser");
+assert.deepStrictEqual(header[1].stack.children.map(node => node.id), ["profile-name", "profile-bio", "profile-link"]);
+assert.strictEqual(header[1].stack.children[0].text.text, "Developer Name | @devuser");
 assert(nodes.some(node => node.id === "profile-bio" && node.text.text === "Building useful tools"));
 assert(nodes.some(node => node.id === "profile-location-text" && node.text.text === "Shanghai, China"));
 assert(nodes.some(node => node.id === "profile-link-text" && node.text.text === "github.com/devuser"));
@@ -112,6 +112,7 @@ const languageRow = nodes.find(node => node.id === "profile-languages").stack;
 assert.strictEqual(languageRow.axis, "PLUGIN_LAYOUT_AXIS_HORIZONTAL");
 assert.strictEqual(languageRow.children.length, 4);
 assert(!nodes.some(node => node.id === "profile-languages-title"));
+assert(!nodes.some(node => node.id === "profile-scope"));
 assert(JSON.parse(tools.repos("{}")).ok);
 if (process.env.CUEBO_CARD_SAMPLE) {
   fs.writeFileSync(process.env.CUEBO_CARD_SAMPLE, JSON.stringify({

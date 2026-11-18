@@ -341,9 +341,7 @@ registerTool("profile_card", function() {
   var bio = typeof viewer.bio === "string" ? viewer.bio.trim().slice(0,180) : "";
   var location = typeof viewer.location === "string" ? viewer.location.trim().slice(0,80) : "";
   var identityChildren = [
-    {id:"profile-login",badge:{text:"@" + viewer.login,
-      appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}},
-    profileText("profile-name",viewer.name || viewer.login,"PLUGIN_TEXT_STYLE_DISPLAY")
+    profileText("profile-name",(viewer.name || viewer.login) + " | @" + viewer.login,"PLUGIN_TEXT_STYLE_DISPLAY")
   ];
   if (bio) identityChildren.push(profileText("profile-bio",bio,"PLUGIN_TEXT_STYLE_SUBTITLE"));
   if (typeof viewer.url === "string" && /^https:\/\//.test(viewer.url)) {
@@ -391,9 +389,6 @@ registerTool("profile_card", function() {
         endDate:year + "-12-31",days:yearDays,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}
     ]}}
   );
-  children.push(profileText("profile-scope",complete ?
-    "公开自有仓库 · 语言按仓库主语言统计" :
-    "Stars 与语言仅统计前 1000 个公开自有仓库","PLUGIN_TEXT_STYLE_CAPTION"));
   var card = {id:"github" + Date.now().toString(36) + Math.floor(Math.random() * 1000000).toString(36),
     title:"GitHub 个人概览",components:[
     {id:"profile-root",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:children}}
