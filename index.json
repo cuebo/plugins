@@ -5,7 +5,7 @@
       "id": "basic-cards",
       "name": "基础卡片",
       "description": "在对话中展示网页列表、指标卡、饼图、折线图和柱状图；插件界面提供组件示例。",
-      "version": "1.2.6",
+      "version": "1.2.7",
       "path": "basic-cards",
       "toolCount": 5,
       "networkHosts": []

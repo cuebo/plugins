@@ -64,7 +64,9 @@ registerTool("show_metrics", function(raw) {
         title,
         {id:id + "-value",text:{text:item.value,style:"PLUGIN_TEXT_STYLE_VALUE"}}
       ];
-      if (item.change) children.push({id:id + "-change",text:{text:item.change,style:"PLUGIN_TEXT_STYLE_CAPTION"}});
+      // Reserve the caption line even when this metric has no change text,
+      // so adjacent cards with and without captions keep the same height.
+      children.push({id:id + "-change",text:{text:item.change || "\u00a0",style:"PLUGIN_TEXT_STYLE_CAPTION"}});
       return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},children:children}};
     })
   }}],items.length);

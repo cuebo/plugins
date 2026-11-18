@@ -8,7 +8,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
-| [`basic-cards/`](basic-cards/) | App 内置的五种对话卡片；打开插件界面可查看 35 个组件示例 | App 内置 |
+| [`basic-cards/`](basic-cards/) | 五种对话卡片；App 随附初始版本，插件商店可更新，内置版本可用于重置 | 插件商店 |
 | [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
 | [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
@@ -45,6 +45,8 @@ plugins/
 使用嵌套组件协议的插件可声明 `"uiProtocol":"cuebo-v1"`，沿用组件 JSON 和点击动作；App 内置的[基础卡片](basic-cards/)插件界面展示完整组件演示。
 
 更新插件时递增 `version`，并在 App 中重新导入对应目录链接。公开插件请保持目录和 `id` 稳定，避免用户重新导入后出现两个不同插件。
+
+基础卡片的仓库版本更新后，在 App 的插件商店刷新列表并点「更新」即可安装；点「重置」会恢复 App 随附的版本。已有对话卡片是生成时的快照，更新后重新生成的卡片才会使用新脚本。
 
 ## GitHub 插件
 
