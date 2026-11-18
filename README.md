@@ -10,7 +10,6 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | --- | --- | --- |
 | [`basic-cards/`](basic-cards/) | 五种对话卡片；App 随附初始版本，插件商店可更新，内置版本可用于重置 | 插件商店 |
 | [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
-| [`imgur/`](imgur/) | 将当前消息的图片匿名上传到 Imgur 并获取分享直链 | `https://github.com/cuebo/plugins/tree/main/imgur` |
 | [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
@@ -55,10 +54,6 @@ plugins/
 ## Telegram 群消息插件
 
 导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；回复、投票和群管理工具会在操作前请求确认。管理员操作需要给 Bot 相应权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
-
-## Imgur 插件
-
-导入 [`imgur/`](imgur/) 后，在 Agent 的插件配置中填写 Imgur Client ID。用户在当前消息附带一张图片并明确要求上传时，App 会展示图片和目标地址供确认；成功后返回分享直链。详见[插件说明](imgur/README.md)。
 
 ## 服务器状态插件
 
