@@ -260,6 +260,17 @@ function demoComponentCatalog(ctx, label) {
     id: "render-area-chart",
     chart: { title: "Chart Area", kind: "PLUGIN_CHART_KIND_AREA", points: demoMemoryPoints(), options: { min: 0, max: 100, showLabels: true }, appearance: { accent: "PLUGIN_ACCENT_GREEN" } }
   };
+  const commitActivityComponent = {
+    id: "render-commit-activity",
+    card: {appearance: {variant: "PLUGIN_COMPONENT_VARIANT_DARK"}, children: [
+      {id: "render-commit-activity-title", text: {text: "每周提交活动", style: "PLUGIN_TEXT_STYLE_TITLE"}},
+      {id: "render-commit-activity-note", text: {text: "演示数据 · 最近六周提交数量", style: "PLUGIN_TEXT_STYLE_CAPTION"}},
+      {id: "render-commit-activity-chart", chart: {kind: "PLUGIN_CHART_KIND_AREA", height: 130,
+        points: [{label: "W-5", value: 8}, {label: "W-4", value: 13}, {label: "W-3", value: 7},
+          {label: "W-2", value: 19}, {label: "W-1", value: 12}, {label: "本周", value: 16}],
+        appearance: {accent: "PLUGIN_ACCENT_GREEN"}}}
+    ]}
+  };
   const barChartComponent = {
     id: "render-bar-chart",
     chart: { title: "Chart Bar", kind: "PLUGIN_CHART_KIND_BAR", points: demoPoints().slice(0, 6), options: { min: 0, max: 100, showLabels: true }, appearance: { accent: "PLUGIN_ACCENT_ORANGE" } }
@@ -406,6 +417,7 @@ function demoComponentCatalog(ctx, label) {
     { id: "component-line-chart", title: "折线图", subtitle: "Chart Line", description: "展示连续趋势数据。", component: lineChartComponent },
     { id: "component-multi-line-chart", title: "多序列折线图", subtitle: "Multi-series Line Chart", description: "在同一坐标系对比多组趋势数据。", component: multiLineChartComponent },
     { id: "component-area-chart", title: "面积图", subtitle: "Chart Area", description: "展示面积填充的趋势数据。", component: areaChartComponent },
+    { id: "component-commit-activity", title: "GitHub 提交活动", subtitle: "Card + Chart Area", description: "组合示例：展示最近六周提交数量，数据仅用于演示。", component: commitActivityComponent },
     { id: "component-bar-chart", title: "柱状图", subtitle: "Chart Bar", description: "展示柱状对比数据。", component: barChartComponent },
     { id: "component-donut-chart", title: "环形图", subtitle: "Chart Donut", description: "展示数据占比分布。", component: donutChartComponent },
     { id: "component-gauge-chart", title: "仪表图", subtitle: "Chart Gauge", description: "展示单项使用率仪表。", component: gaugeChartComponent },
