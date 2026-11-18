@@ -14,7 +14,7 @@
       "id": "github",
       "name": "GitHub",
       "description": "查看个人概览、贡献日历和仓库概览卡片，以及管理 Issue 与 Pull Request。",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "path": "github",
       "toolCount": 12,
       "networkHosts": [

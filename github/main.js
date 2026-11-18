@@ -96,6 +96,13 @@ function profileTile(id, title, value, symbol, accent) {
   ]}};
 }
 
+function profileStat(id, title, value) {
+  return {id:id,stack:{spacing:3,children:[
+    {id:id+"-label",text:{text:title,style:"PLUGIN_TEXT_STYLE_CAPTION",alignment:"PLUGIN_TEXT_ALIGNMENT_CENTER"}},
+    {id:id+"-value",text:{text:value,style:"PLUGIN_TEXT_STYLE_DISPLAY",alignment:"PLUGIN_TEXT_ALIGNMENT_CENTER"}}
+  ]}};
+}
+
 function repositoryHTTP(path) {
   var config = JSON.parse(host.config());
   if (!config.token) return {ok:false,error:"请先在此 Agent 的 GitHub 插件配置中填写访问令牌"};
@@ -262,7 +269,7 @@ registerTool("repo_card", function(raw) {
 });
 
 registerTool("profile_card", function() {
-  var firstQuery = "query($cursor:String){viewer{login name avatarUrl(size:128) url followers{totalCount} following{totalCount} " +
+  var firstQuery = "query($cursor:String){viewer{login name bio location avatarUrl(size:128) url followers{totalCount} following{totalCount} " +
     "repositories(first:100,after:$cursor,ownerAffiliations:[OWNER],privacy:PUBLIC){" +
     "totalCount pageInfo{hasNextPage endCursor} nodes{stargazerCount primaryLanguage{name}}} " +
     "contributionsCollection{contributionCalendar{weeks{contributionDays{date contributionCount contributionLevel}}}}}}";
@@ -331,37 +338,62 @@ registerTool("profile_card", function() {
     streak++;
   }
   var avatar = typeof viewer.avatarUrl === "string" && /^https:\/\//.test(viewer.avatarUrl) ? viewer.avatarUrl : "";
+  var bio = typeof viewer.bio === "string" ? viewer.bio.trim().slice(0,180) : "";
+  var location = typeof viewer.location === "string" ? viewer.location.trim().slice(0,80) : "";
   var headerChildren = [];
-  if (avatar) headerChildren.push({id:"profile-avatar",image:{url:avatar,width:64,height:64,
+  if (avatar) headerChildren.push({id:"profile-avatar",image:{url:avatar,width:76,height:76,
     shape:"PLUGIN_IMAGE_SHAPE_CIRCLE",borderWidth:3,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
-  headerChildren.push({id:"profile-identity",stack:{spacing:3,children:[
-    profileText("profile-name",viewer.name || viewer.login,"PLUGIN_TEXT_STYLE_TITLE"),
-    profileText("profile-login","@" + viewer.login,"PLUGIN_TEXT_STYLE_CAPTION")
+  headerChildren.push({id:"profile-identity",stack:{spacing:5,children:[
+    {id:"profile-login",badge:{text:"GitHub · @" + viewer.login,
+      appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}},
+    profileText("profile-name",viewer.name || viewer.login,"PLUGIN_TEXT_STYLE_DISPLAY")
   ]}});
-  headerChildren.push({id:"profile-brand",badge:{text:"GitHub",appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}});
   var children = [
     {id:"profile-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:12,children:headerChildren}},
-    {id:"profile-stats",grid:{columns:2,spacing:7,children:[
-      profileTile("stat-repos","公开仓库",profileCount(viewer.repositories.totalCount),"book.closed"),
-      profileTile("stat-stars","Stars",profileCount(stars) + (complete ? "" : "+"),"star"),
-      profileTile("stat-followers","Followers",profileCount(viewer.followers.totalCount),"person.2"),
-      profileTile("stat-following","Following",profileCount(viewer.following.totalCount),"person.badge.plus")
-    ]}},
-    {id:"profile-contribution-stats",grid:{columns:2,spacing:7,children:[
-      profileTile("stat-contributions","今年贡献",profileCount(contributions),"calendar"),
-      profileTile("stat-streak","连续贡献",streak + " 天","flame.fill","PLUGIN_ACCENT_GREEN")
-    ]}},
-    {id:"profile-calendar-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
-      {id:"profile-calendar",calendarHeatmap:{title:year + " 年贡献活动",startDate:year + "-01-01",
-        endDate:year + "-12-31",days:yearDays,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}
-    ]}}
   ];
-  if (topLanguages.length) children.push({id:"profile-languages-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
-    profileText("profile-languages-title","主要语言","PLUGIN_TEXT_STYLE_TITLE"),
-    {id:"profile-languages",grid:{columns:4,spacing:5,children:topLanguages.map(function(name,index) {
-      return {id:"profile-language-" + index,badge:{text:name,appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}};
+  if (bio) children.push(profileText("profile-bio",bio,"PLUGIN_TEXT_STYLE_SUBTITLE"));
+  if (location) children.push({id:"profile-location",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
+    profileIcon("profile-location-icon","mappin.and.ellipse"),
+    profileText("profile-location-text",location,"PLUGIN_TEXT_STYLE_CAPTION")
+  ]}});
+  if (typeof viewer.url === "string" && /^https:\/\//.test(viewer.url)) {
+    children.push({id:"profile-link",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
+      profileIcon("profile-link-icon","link"),
+      profileText("profile-link-text",viewer.url.replace(/^https:\/\//,""),"PLUGIN_TEXT_STYLE_CAPTION","PLUGIN_ACCENT_GREEN")
+    ]}});
+  }
+  children.push(
+    {id:"profile-stats-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
+      {id:"profile-stats",grid:{columns:3,spacing:12,children:[
+        profileStat("stat-followers","Followers",profileCount(viewer.followers.totalCount)),
+        profileStat("stat-following","Following",profileCount(viewer.following.totalCount)),
+        profileStat("stat-repos","Repositories",profileCount(viewer.repositories.totalCount)),
+        profileStat("stat-stars","Stars",profileCount(stars) + (complete ? "" : "+")),
+        profileStat("stat-contributions","今年贡献",profileCount(contributions)),
+        profileStat("stat-streak","连续贡献",streak + " 天")
+      ]}}
+    ]}},
+  );
+  if (topLanguages.length) children.push({id:"profile-languages",stack:{spacing:8,children:[
+    {id:"profile-languages-heading",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
+      profileIcon("profile-languages-icon","chevron.left.forwardslash.chevron.right"),
+      profileText("profile-languages-title","主要语言","PLUGIN_TEXT_STYLE_TITLE")
+    ]}},
+    {id:"profile-language-grid",grid:{columns:2,spacing:8,children:topLanguages.map(function(name,index) {
+      return {id:"profile-language-" + index,badge:{text:name,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}};
     })}}
   ]}});
+  children.push(
+    {id:"profile-calendar-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
+      {id:"profile-calendar-heading",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
+        profileIcon("profile-calendar-icon","calendar"),
+        profileText("profile-calendar-title","贡献活动","PLUGIN_TEXT_STYLE_TITLE")
+      ]}},
+      profileText("profile-calendar-total",year + " 年 · " + contributions + " 次贡献","PLUGIN_TEXT_STYLE_CAPTION","PLUGIN_ACCENT_GREEN"),
+      {id:"profile-calendar",calendarHeatmap:{title:"",startDate:year + "-01-01",
+        endDate:year + "-12-31",days:yearDays,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}}
+    ]}}
+  );
   children.push(profileText("profile-scope",complete ?
     "公开自有仓库 · 语言按仓库主语言统计" :
     "Stars 与语言仅统计前 1000 个公开自有仓库","PLUGIN_TEXT_STYLE_CAPTION"));
