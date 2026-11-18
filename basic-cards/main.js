@@ -22,6 +22,13 @@ function showContent(title, components, count) {
   return JSON.stringify({shown:response.ok === true,count:count});
 }
 
+function basicPageParams(item, cards) {
+  var params = {label:item.label,value:item.value,change:item.change || "",
+    trend:item.trend || "",icon:item.icon || "",pageTitle:item.detailTitle || "指标详情"};
+  cards.forEach(function(card, index) { params["card" + index] = JSON.stringify(card); });
+  return params;
+}
+
 registerTool("show_list", function(raw) {
   var input = JSON.parse(raw);
   var items = requireItems(input.items, 1, 40).map(function(item) {
@@ -49,8 +56,11 @@ registerTool("show_metrics", function(raw) {
     if ((change && ["up","down","flat"].indexOf(trend) < 0) || (!change && trend)) throw new Error("趋势无效");
     if (change.length > 1000) throw new Error("变化文案过长");
     if (icon && !/^[a-z0-9][a-z0-9.-]{0,79}$/.test(icon)) throw new Error("图标名称无效");
-    return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),change:change,trend:trend,icon:icon};
+    return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),
+      change:change,trend:trend,icon:icon,
+      detailTitle:basicOptionalText(item.detailTitle,"详情页标题",80) || item.label + "详情"};
   });
+  var detailPages = basicPrepareDetailPages(input, items.length);
   return showContent("指标",[{id:"metricCards",grid:{columns:2,spacing:10,
     appearance:{container:"PLUGIN_CONTAINER_STYLE_NONE"},
     children:items.map(function(item,index) {
@@ -68,11 +78,34 @@ registerTool("show_metrics", function(raw) {
       // Reserve the caption line even when this metric has no change text,
       // so adjacent cards with and without captions keep the same height.
       children.push({id:id + "-change",text:{text:item.change || "\u00a0",style:"PLUGIN_TEXT_STYLE_CAPTION"}});
+      var params = basicPageParams(item, detailPages[index]);
       return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
-        onTap:{plugin:{actionId:"openMetricDetail",params:{label:item.label,value:item.value,
-          change:item.change,trend:item.trend,icon:item.icon}}},children:children}};
+        onTap:{plugin:{actionId:"openMetricDetail",params:params}},children:children}};
     })
   }}],items.length);
+});
+
+registerTool("show_page", function(raw) {
+  var input = JSON.parse(raw);
+  var title = requireText(input.title,"页面标题",80);
+  var cards = requireItems(input.cards,1,4).map(function(card) {
+    if (!card || typeof card !== "object" || Array.isArray(card)) throw new Error("页面卡片无效");
+    var item = {};
+    Object.keys(card).forEach(function(key) { item[key] = card[key]; });
+    item.metricIndex = 0;
+    return item;
+  });
+  var pageCards = basicPrepareDetailPages({
+    detailCards:cards,detailRows:input.rows,detailPoints:input.points
+  },1)[0];
+  var params = basicPageParams({label:title,value:pageCards.length + " 张卡片",detailTitle:title},pageCards);
+  return showContent(title,[{id:"page-entry",card:{
+    appearance:{accent:"PLUGIN_ACCENT_TEAL",variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
+    onTap:{plugin:{actionId:"openCommonPage",params:params}},children:[
+      {id:"page-entry-title",text:{text:title,style:"PLUGIN_TEXT_STYLE_TITLE"}},
+      {id:"page-entry-description",text:{text:pageCards.length + " 张通用卡片 · 点击查看",style:"PLUGIN_TEXT_STYLE_SUBTITLE"}}
+    ]
+  }}],pageCards.length);
 });
 
 function registerChart(name, kind) {
@@ -93,7 +126,18 @@ registerChart("show_line_chart","line_chart");
 registerChart("show_bar_chart","bar_chart");
 
 function dashboard(ctx) {
-  var page = detail(ctx);
-  page.title = "基础卡片 · 组件演示";
-  return page;
+  return {title:"基础卡片",components:[
+    {id:"system-components-entry",card:{
+      appearance:{accent:"PLUGIN_ACCENT_BLUE",variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
+      onTap:{navigate:{surface:"detail",route:"system-components"}},children:[
+        {id:"system-components-title",text:{text:"系统组件",style:"PLUGIN_TEXT_STYLE_TITLE"}},
+        {id:"system-components-description",text:{text:"查看当前支持的全部组件和交互示例",style:"PLUGIN_TEXT_STYLE_SUBTITLE"}}
+      ]}},
+    {id:"common-cards-entry",card:{
+      appearance:{accent:"PLUGIN_ACCENT_TEAL",variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
+      onTap:{navigate:{surface:"detail",route:"common-cards"}},children:[
+        {id:"common-cards-title",text:{text:"通用卡片",style:"PLUGIN_TEXT_STYLE_TITLE"}},
+        {id:"common-cards-description",text:{text:"查看指标、摘要、明细和图表卡组成的页面",style:"PLUGIN_TEXT_STYLE_SUBTITLE"}}
+      ]}}
+  ]};
 }

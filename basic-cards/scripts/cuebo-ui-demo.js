@@ -169,7 +169,11 @@ function demoComponentCatalog(ctx, label) {
   };
   const buttonComponent = {
     id: "render-button",
-    button: { title: "Button", subtitle: "点击触发插件 action", appearance: { accent: demoAccent(ctx), iconSource: { systemName: "bolt.circle" }, variant: "PLUGIN_COMPONENT_VARIANT_FILLED" }, onTap: { plugin: { actionId: "refresh" } } }
+    stack: {spacing: 10, children: [
+      {id: "render-button-small", button: {title: "小按钮", appearance: {accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_SMALL", iconSource: {systemName: "bolt.circle"}, variant: "PLUGIN_COMPONENT_VARIANT_FILLED"}, onTap: {plugin: {actionId: "refresh"}}}},
+      {id: "render-button-medium", button: {title: "中按钮", appearance: {accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_MEDIUM", iconSource: {systemName: "bolt.circle"}, variant: "PLUGIN_COMPONENT_VARIANT_FILLED"}, onTap: {plugin: {actionId: "refresh"}}}},
+      {id: "render-button-large", button: {title: "大按钮", appearance: {accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_LARGE", iconSource: {systemName: "bolt.circle"}, variant: "PLUGIN_COMPONENT_VARIANT_FILLED"}, onTap: {plugin: {actionId: "refresh"}}}}
+    ]}
   };
   const toggleComponent = {
     id: "render-toggle",
@@ -393,7 +397,7 @@ function demoComponentCatalog(ctx, label) {
     { id: "component-text", title: "文本", subtitle: "Text", description: "展示标题、正文和说明文本。", component: textComponent },
     { id: "component-value", title: "数值", subtitle: "Value", description: "展示数值、单位、趋势和状态。", component: valueComponent },
     { id: "component-badge", title: "徽标", subtitle: "Badge", description: "展示简短状态和值。", component: badgeComponent },
-    { id: "component-button", title: "按钮", subtitle: "Button", description: "触发插件受控 Action。", component: buttonComponent },
+    { id: "component-button", title: "按钮", subtitle: "Button", description: "小、中、大三种尺寸，文字居中并触发插件 Action。", component: buttonComponent },
     { id: "component-toggle", title: "开关", subtitle: "Toggle", description: "切换布尔状态并触发插件 Action。", component: toggleComponent },
     { id: "component-bottom-sheet", title: "半弹层", subtitle: "Bottom Sheet", description: "打开支持多档高度的原生弹层。", component: bottomSheetComponent },
     { id: "component-list", title: "列表", subtitle: "List", description: "展示多行项目及交互动作。", component: listComponent },
@@ -613,39 +617,28 @@ globalThis.widget = function(ctx) {
 
 globalThis.detail = function(ctx) {
   const label = demoLabel(ctx);
+  if (ctx.route === "common-cards") return basicCommonCardDemoPage();
   return {
-    title: "NAS 示例详情",
+    title: ctx.route === "system-components" ? "系统组件" : "NAS 示例详情",
     navigationActions: demoNavigationActions(ctx),
     components: demoComponentShowcase(ctx, label)
   };
 };
 
 globalThis.sheet = function(ctx) {
-  if (ctx.route === "metric-detail") {
+  if (ctx.route === "metric-detail" || ctx.route === "common-page") {
     var metric = JSON.parse(host.storage("get", "active-metric-detail"));
+    host.storage("delete", "active-metric-detail");
     if (!metric || !metric.label || !metric.value) {
-      return {title: "指标详情", components: [{id: "metric-empty", stateBlock: {
-        kind: "PLUGIN_STATE_EMPTY", title: "指标已失效", message: "请重新生成指标卡片。"
+      return {title: "页面详情", components: [{id: "metric-empty", stateBlock: {
+        kind: "PLUGIN_STATE_EMPTY", title: "页面已失效", message: "请重新生成卡片。"
       }}]};
     }
-    var accent = metric.trend === "up" ? "PLUGIN_ACCENT_GREEN"
-      : metric.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
-    var heading = [{id: "metric-detail-label", text: {
-      text: metric.label, style: "PLUGIN_TEXT_STYLE_TITLE"
-    }}];
-    if (metric.icon) heading.unshift({id: "metric-detail-icon", icon: {
-      appearance: {accent: accent, iconSource: {systemName: metric.icon}}
-    }});
-    var components = [
-      {id: "metric-detail-heading", stack: {axis: "PLUGIN_LAYOUT_AXIS_HORIZONTAL", spacing: 10, children: heading}},
-      {id: "metric-detail-value", text: {text: metric.value, style: "PLUGIN_TEXT_STYLE_DISPLAY"}}
-    ];
-    if (metric.change) components.push({id: "metric-detail-change", text: {
-      text: metric.change, style: "PLUGIN_TEXT_STYLE_SUBTITLE"
-    }});
-    return {title: "指标详情", components: [{id: "metric-detail-content", stack: {
-      spacing: 22, children: components
-    }}]};
+    var cards = metric.cards && metric.cards.length ? metric.cards : [{
+      type:"metric",name:metric.label,value:metric.value,subtitle:metric.change,
+      icon:metric.icon,trend:metric.trend
+    }];
+    return basicCommonPage(metric.pageTitle || "指标详情", cards);
   }
   if (ctx.route === "navigation-danger") {
     return {
@@ -659,15 +652,24 @@ globalThis.sheet = function(ctx) {
   };
 };
 
+function basicOpenCommonPage(ctx, route) {
+  var params = ctx.params || {};
+  if (!params.label || !params.value) return {effects: [{toast: {text: "页面数据不可用"}}]};
+  var cards = basicDecodeCardParams(params);
+  host.storage("put", "active-metric-detail", JSON.stringify({
+    label: params.label, value: params.value, change: params.change || "",
+    trend: params.trend || "", icon: params.icon || "",
+    pageTitle: params.pageTitle || "页面详情", cards: cards
+  }));
+  return {effects: [{navigate: {surface: "sheet", route: route}}]};
+}
+
 globalThis.actions = {
   openMetricDetail: function(ctx) {
-    var params = ctx.params || {};
-    if (!params.label || !params.value) return {effects: [{toast: {text: "指标数据不可用"}}]};
-    host.storage("put", "active-metric-detail", JSON.stringify({
-      label: params.label, value: params.value, change: params.change || "",
-      trend: params.trend || "", icon: params.icon || ""
-    }));
-    return {effects: [{navigate: {surface: "sheet", route: "metric-detail"}}]};
+    return basicOpenCommonPage(ctx, "metric-detail");
+  },
+  openCommonPage: function(ctx) {
+    return basicOpenCommonPage(ctx, "common-page");
   },
   openDetail: function(ctx) {
     return {

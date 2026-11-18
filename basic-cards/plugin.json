@@ -1,14 +1,15 @@
 {
   "id": "basic-cards",
   "name": "基础卡片",
-  "description": "在对话中展示网页列表、指标卡、饼图、折线图和柱状图；插件界面提供组件示例。",
-  "pe": "基础卡片已启用。用户要求用卡片、图表或可视化展示数据时，先获取真实数据，再调用对应工具：多个网页链接用 plugin_basic_cards_show_list，1 至 12 个关键数值或状态用 plugin_basic_cards_show_metrics，占比或组成用 plugin_basic_cards_show_pie_chart，时间或顺序趋势用 plugin_basic_cards_show_line_chart，类别数值对比用 plugin_basic_cards_show_bar_chart。用户无需说出插件名称；调用后可补充简短文字解释。只传用户提供或工具查到的数据，不编造。用户明确只要文字时遵从。工具返回 shown:true 才表示界面已展示。",
-  "version": "1.2.9",
+  "description": "在对话中展示网页列表、指标、图表和由通用卡片组成的页面；插件界面提供系统组件与通用卡片示例。",
+  "pe": "基础卡片已启用。用户要求用卡片、图表或可视化展示数据时，先获取真实数据，再调用对应工具：多个网页链接用 plugin_basic_cards_show_list，1 至 12 个关键数值或状态用 plugin_basic_cards_show_metrics，占比或组成用 plugin_basic_cards_show_pie_chart，时间或顺序趋势用 plugin_basic_cards_show_line_chart，类别数值对比用 plugin_basic_cards_show_bar_chart。用户无需说出插件名称；调用后可补充简短文字解释。只传用户提供或工具查到的数据，不编造。用户明确只要文字时遵从。工具返回 shown:true 才表示界面已展示。 指标卡需要展示多部分详情时，在 show_metrics 同一次调用中传 detailCards；可选类型 metric、summary、detailList、chart。detailRows 和 detailPoints 按 cardKey 关联。详情只使用已查到或用户给出的数据，不编造。 用户要一个由多个固定 UI 卡片组成的页面时，调用 plugin_basic_cards_show_page：title 是页面标题，cards 按顺序填写 1 至 4 张卡片，类型 metric、summary、detailList、chart；rows 和 points 按 cardKey 关联。",
+  "version": "1.3.0",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "files": {
     "main.js": "main.js",
-    "scripts/cuebo-ui-demo.js": "scripts/cuebo-ui-demo.js"
+    "scripts/cuebo-ui-demo.js": "scripts/cuebo-ui-demo.js",
+    "scripts/card-catalog.js": "scripts/card-catalog.js"
   },
   "tools": [
     {
@@ -49,7 +50,7 @@
     },
     {
       "name": "show_metrics",
-      "description": "用户要关键数据卡片、状态概览或数值对比时，用此工具展示 1 至 12 项指标，每行两张卡片。每项可选 SF Symbols 图标、变化文案和趋势。",
+      "description": "展示 1 至 12 项指标，每行两张；可选 detailCards 为点击某项指标后的 Page 选择多个通用卡片。类型 metric/summary/detailList/chart，按 metricIndex 关联指标，按 cardKey 关联 detailRows 和 detailPoints。仅传真实数据。",
       "parameters": {
         "items": {
           "type": "array",
@@ -82,6 +83,237 @@
                 "type": "string",
                 "description": "有变化文案时填写 up、down 或 flat",
                 "required": false
+              },
+              "detailTitle": {
+                "type": "string",
+                "description": "可选点击后的 Page 标题",
+                "required": false
+              }
+            }
+          }
+        },
+        "detailCards": {
+          "type": "array",
+          "description": "可选详情 Page 的卡片清单，最多 24 张，每个指标最多 4 张，顺序即页面顺序",
+          "required": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "metricIndex": {
+                "type": "number",
+                "description": "所属指标的序号，从 0 开始",
+                "required": true
+              },
+              "cardKey": {
+                "type": "string",
+                "description": "本次调用内唯一的卡片标识，供明细和数据点引用",
+                "required": true
+              },
+              "type": {
+                "type": "string",
+                "description": "metric 指标卡、summary 摘要卡、detailList 明细卡、chart 图表卡",
+                "required": true
+              },
+              "name": {
+                "type": "string",
+                "description": "卡片显示名称",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "description": "metric 必填的数值",
+                "required": false
+              },
+              "subtitle": {
+                "type": "string",
+                "description": "metric 可选的补充说明",
+                "required": false
+              },
+              "body": {
+                "type": "string",
+                "description": "summary 必填的摘要正文",
+                "required": false
+              },
+              "icon": {
+                "type": "string",
+                "description": "metric 可选 SF Symbols 图标名",
+                "required": false
+              },
+              "trend": {
+                "type": "string",
+                "description": "metric 可选 up/down/flat",
+                "required": false
+              },
+              "chartKind": {
+                "type": "string",
+                "description": "chart 必填 line/bar/donut",
+                "required": false
+              }
+            }
+          }
+        },
+        "detailRows": {
+          "type": "array",
+          "description": "detailList 的明细行，按 cardKey 归属，卡片至少 1 行、最多 8 行",
+          "required": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardKey": {
+                "type": "string",
+                "description": "对应 detailList 卡片的标识",
+                "required": true
+              },
+              "name": {
+                "type": "string",
+                "description": "明细名称",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "description": "明细值",
+                "required": true
+              }
+            }
+          }
+        },
+        "detailPoints": {
+          "type": "array",
+          "description": "chart 的数据点，按 cardKey 归属，卡片至少 2 点、最多 12 点",
+          "required": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardKey": {
+                "type": "string",
+                "description": "对应 chart 卡片的标识",
+                "required": true
+              },
+              "label": {
+                "type": "string",
+                "description": "数据点标签",
+                "required": true
+              },
+              "value": {
+                "type": "number",
+                "description": "真实数值",
+                "required": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "show_page",
+      "description": "把 1 至 4 张固定 UI 的通用卡片组装成 Page，点击对话中的页面入口打开半弹层。类型 metric、summary、detailList、chart；每张卡片有唯一 cardKey 和 name，明细行与图表点按 cardKey 关联。只传真实数据。",
+      "parameters": {
+        "title": {
+          "type": "string",
+          "description": "Page 标题，最多 80 字",
+          "required": true
+        },
+        "cards": {
+          "type": "array",
+          "description": "按展示顺序排列的 1 至 4 张通用卡片；类型及字段含义见各属性描述",
+          "required": true,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardKey": {
+                "type": "string",
+                "description": "本次调用内唯一的卡片标识，供明细和数据点引用",
+                "required": true
+              },
+              "type": {
+                "type": "string",
+                "description": "metric 指标卡、summary 摘要卡、detailList 明细卡、chart 图表卡",
+                "required": true
+              },
+              "name": {
+                "type": "string",
+                "description": "卡片显示名称",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "description": "metric 必填的数值",
+                "required": false
+              },
+              "subtitle": {
+                "type": "string",
+                "description": "metric 可选的补充说明",
+                "required": false
+              },
+              "body": {
+                "type": "string",
+                "description": "summary 必填的摘要正文",
+                "required": false
+              },
+              "icon": {
+                "type": "string",
+                "description": "metric 可选 SF Symbols 图标名",
+                "required": false
+              },
+              "trend": {
+                "type": "string",
+                "description": "metric 可选 up/down/flat",
+                "required": false
+              },
+              "chartKind": {
+                "type": "string",
+                "description": "chart 必填 line/bar/donut",
+                "required": false
+              }
+            }
+          }
+        },
+        "rows": {
+          "type": "array",
+          "description": "detailList 的明细行，按 cardKey 归属，每卡 1 至 8 行",
+          "required": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardKey": {
+                "type": "string",
+                "description": "对应 detailList 卡片的标识",
+                "required": true
+              },
+              "name": {
+                "type": "string",
+                "description": "明细名称",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "description": "明细值",
+                "required": true
+              }
+            }
+          }
+        },
+        "points": {
+          "type": "array",
+          "description": "chart 的数据点，按 cardKey 归属，每卡 2 至 12 点",
+          "required": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardKey": {
+                "type": "string",
+                "description": "对应 chart 卡片的标识",
+                "required": true
+              },
+              "label": {
+                "type": "string",
+                "description": "数据点标签",
+                "required": true
+              },
+              "value": {
+                "type": "number",
+                "description": "真实数值",
+                "required": true
               }
             }
           }
