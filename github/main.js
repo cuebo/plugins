@@ -340,28 +340,29 @@ registerTool("profile_card", function() {
   var avatar = typeof viewer.avatarUrl === "string" && /^https:\/\//.test(viewer.avatarUrl) ? viewer.avatarUrl : "";
   var bio = typeof viewer.bio === "string" ? viewer.bio.trim().slice(0,180) : "";
   var location = typeof viewer.location === "string" ? viewer.location.trim().slice(0,80) : "";
-  var headerChildren = [];
-  if (avatar) headerChildren.push({id:"profile-avatar",image:{url:avatar,width:76,height:76,
-    shape:"PLUGIN_IMAGE_SHAPE_CIRCLE",borderWidth:3,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
-  headerChildren.push({id:"profile-identity",stack:{spacing:5,children:[
-    {id:"profile-login",badge:{text:"GitHub · @" + viewer.login,
+  var identityChildren = [
+    {id:"profile-login",badge:{text:"@" + viewer.login,
       appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}},
     profileText("profile-name",viewer.name || viewer.login,"PLUGIN_TEXT_STYLE_DISPLAY")
-  ]}});
-  var children = [
-    {id:"profile-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:12,children:headerChildren}},
   ];
-  if (bio) children.push(profileText("profile-bio",bio,"PLUGIN_TEXT_STYLE_SUBTITLE"));
-  if (location) children.push({id:"profile-location",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
-    profileIcon("profile-location-icon","mappin.and.ellipse"),
-    profileText("profile-location-text",location,"PLUGIN_TEXT_STYLE_CAPTION")
-  ]}});
+  if (bio) identityChildren.push(profileText("profile-bio",bio,"PLUGIN_TEXT_STYLE_SUBTITLE"));
   if (typeof viewer.url === "string" && /^https:\/\//.test(viewer.url)) {
-    children.push({id:"profile-link",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
+    identityChildren.push({id:"profile-link",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
       profileIcon("profile-link-icon","link"),
       profileText("profile-link-text",viewer.url.replace(/^https:\/\//,""),"PLUGIN_TEXT_STYLE_CAPTION","PLUGIN_ACCENT_GREEN")
     ]}});
   }
+  var headerChildren = [];
+  if (avatar) headerChildren.push({id:"profile-avatar",image:{url:avatar,width:76,height:76,
+    shape:"PLUGIN_IMAGE_SHAPE_CIRCLE",borderWidth:3,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}});
+  headerChildren.push({id:"profile-identity",stack:{spacing:5,children:identityChildren}});
+  var children = [
+    {id:"profile-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:12,children:headerChildren}},
+  ];
+  if (location) children.push({id:"profile-location",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
+    profileIcon("profile-location-icon","mappin.and.ellipse"),
+    profileText("profile-location-text",location,"PLUGIN_TEXT_STYLE_CAPTION")
+  ]}});
   children.push(
     {id:"profile-stats-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
       {id:"profile-stats",grid:{columns:3,spacing:12,children:[
@@ -374,15 +375,11 @@ registerTool("profile_card", function() {
       ]}}
     ]}},
   );
-  if (topLanguages.length) children.push({id:"profile-languages",stack:{spacing:8,children:[
-    {id:"profile-languages-heading",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
-      profileIcon("profile-languages-icon","chevron.left.forwardslash.chevron.right"),
-      profileText("profile-languages-title","主要语言","PLUGIN_TEXT_STYLE_TITLE")
-    ]}},
-    {id:"profile-language-grid",grid:{columns:2,spacing:8,children:topLanguages.map(function(name,index) {
-      return {id:"profile-language-" + index,badge:{text:name,appearance:{accent:"PLUGIN_ACCENT_GREEN"}}};
-    })}}
-  ]}});
+  if (topLanguages.length) children.push({id:"profile-languages",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:5,
+    children:topLanguages.map(function(name,index) {
+      return {id:"profile-language-" + index,badge:{text:name,
+        appearance:{accent:"PLUGIN_ACCENT_GREEN",size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}};
+    })}});
   children.push(
     {id:"profile-calendar-card",card:{appearance:{variant:"PLUGIN_COMPONENT_VARIANT_DARK"},children:[
       {id:"profile-calendar-heading",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:7,children:[
