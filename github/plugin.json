@@ -2,8 +2,8 @@
   "id": "github",
   "name": "GitHub",
   "description": "查看个人概览、贡献日历和仓库概览卡片，以及管理 Issue 与 Pull Request。",
-  "pe": "GitHub 插件已启用。用户问我的 GitHub 主页、个人数据、粉丝、Stars、贡献或活跃度时，优先调用 plugin_github_profile_card，实际展示个人卡片；问某个仓库怎么样，或问仓库的 Stars、语言、许可证、分支、标签、更新时间、提交热力图时，调用 plugin_github_repo_card，实际展示仓库卡片。用户给出 owner/repo 或 GitHub 仓库链接时据此填写 owner 和 repo；目标不明确时先用 plugin_github_repos 查找，不猜仓库名。用户只要求列出仓库时调用 plugin_github_repos。除非用户明确只要文字，概览查询不要仅文字描述，卡片工具返回 shown:true 后再简短解读。Issue 和 Pull Request 查询用对应读取工具，写操作仅在用户要求时执行并遵守 App 确认。只使用实测数据，不泄漏令牌。",
-  "version": "1.4.1",
+  "pe": "GitHub 插件已启用。涉及 GitHub 账号、个人数据或贡献时，尽量调用 plugin_github_profile_card，实际展示个人卡片；涉及具体 GitHub 仓库的数据或活跃度时，尽量调用 plugin_github_repo_card，实际展示仓库卡片。用户给出 owner/repo 或 GitHub 仓库链接时据此填写 owner 和 repo；目标不明确时先用 plugin_github_repos 查找，不猜仓库名。用户只要求列出仓库时调用 plugin_github_repos。用户无需明确要求卡片；有合适的真实数据时优先展示卡片，工具返回 shown:true 后再简短解读。用户明确只要文字时遵从。Issue 和 Pull Request 查询用对应读取工具，写操作仅在用户要求时执行并遵守 App 确认。只使用实测数据，不泄漏令牌。",
+  "version": "1.4.2",
   "uiProtocol": "cuebo-v1",
   "capabilities": ["generative_ui"],
   "files": {

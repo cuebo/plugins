@@ -2,8 +2,8 @@
   "id": "basic-cards",
   "name": "基础卡片",
   "description": "在对话中展示网页列表、指标、图表和由通用卡片组成的页面；插件界面提供系统组件与通用卡片示例。",
-  "pe": "基础卡片已启用。用户询问多个状态、指标、网页结果、占比、趋势或类别比较时，先获取真实数据；若没有更贴合数据源的专用系统或插件卡片，优先调用基础卡片对应工具展示，用户无需明确说“卡片”：多个网页链接用 plugin_basic_cards_show_list，1 至 12 个关键数值或状态用 plugin_basic_cards_show_metrics，占比或组成用 plugin_basic_cards_show_pie_chart，时间或顺序趋势用 plugin_basic_cards_show_line_chart，类别数值对比用 plugin_basic_cards_show_bar_chart。卡片展示后只补充简短结论，避免重复罗列。只传用户提供或工具查到的数据，不编造。用户明确只要文字时遵从。工具返回 shown:true 才表示界面已展示。 指标卡需要展示多部分详情时，在 show_metrics 同一次调用中传 detailCards；可选类型 metric、summary、detailList、chart。detailRows 和 detailPoints 按 cardKey 关联。详情只使用已查到或用户给出的数据，不编造。 用户要一个由多个固定 UI 卡片组成的页面时，调用 plugin_basic_cards_show_page：title 是页面标题，cards 按顺序填写 1 至 4 张卡片，类型 metric、summary、detailList、chart；rows 和 points 按 cardKey 关联。",
-  "version": "1.3.4",
+  "pe": "基础卡片已启用。拿到适合展示的真实数据时，尽量调用卡片工具，让用户直接看到结果；用户无需明确说“卡片”。有专用系统或插件卡片时优先用专用卡片，通用数据可用基础卡片：多个网页链接用 plugin_basic_cards_show_list，1 至 12 个关键数值或状态用 plugin_basic_cards_show_metrics，占比或组成用 plugin_basic_cards_show_pie_chart，时间或顺序趋势用 plugin_basic_cards_show_line_chart，类别数值对比用 plugin_basic_cards_show_bar_chart。卡片展示后只补充简短结论，避免重复罗列。只传用户提供或工具查到的数据，不编造。用户明确只要文字时遵从。工具返回 shown:true 才表示界面已展示。 指标卡需要展示多部分详情时，在 show_metrics 同一次调用中传 detailCards；可选类型 metric、summary、detailList、chart。detailRows 和 detailPoints 按 cardKey 关联。详情只使用已查到或用户给出的数据，不编造。 用户要一个由多个固定 UI 卡片组成的页面时，调用 plugin_basic_cards_show_page：title 是页面标题，cards 按顺序填写 1 至 4 张卡片，类型 metric、summary、detailList、chart；rows 和 points 按 cardKey 关联。",
+  "version": "1.3.5",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "files": {
