@@ -50,7 +50,9 @@ const systemPage = sandbox.detail({route: "system-components"});
 assert.equal(systemPage.components[1].grid.children.length, 35);
 const commonPage = sandbox.detail({route: "common-cards"});
 assert.equal(commonPage.components.length, 4);
-assert.ok(commonPage.components.every(node => node.card));
+assert.ok(commonPage.components[0].card && commonPage.components[1].card && commonPage.components[3].card);
+assert.equal(commonPage.components[2].card, undefined);
+assert.equal(commonPage.components[2].descriptionList.title, "设备明细");
 
 const value = "在线 · 4 台\n室内机全关";
 const result = JSON.parse(tools.show_metrics(JSON.stringify({items: [
@@ -89,7 +91,8 @@ assert.equal(composedPage.title, "客厅设备详情");
 assert.equal(composedPage.components.length, 4);
 assert.equal(composedPage.components[0].card.children[1].text.text, "关");
 assert.equal(composedPage.components[1].card.children[1].text.text, "灯光和空调均未运行。");
-assert.equal(composedPage.components[2].card.children[0].descriptionList.items[0].title, "主灯");
+assert.equal(composedPage.components[2].card, undefined);
+assert.equal(composedPage.components[2].descriptionList.items[0].title, "主灯");
 assert.equal(composedPage.components[3].card.children[0].chart.points.length, 2);
 assert.equal(storage.size, 0);
 
@@ -109,6 +112,8 @@ assert.equal(sandbox.actions.openCommonPage({params: pageAction.params}).effects
 const standalonePage = sandbox.sheet({route: "common-page"});
 assert.equal(standalonePage.title, "家庭概览");
 assert.equal(standalonePage.components.length, 2);
+assert.equal(standalonePage.components[1].descriptionList.items[0].title, "客厅主灯");
+assert.equal(standalonePage.components[1].card, undefined);
 assert.equal(storage.size, 0);
 
 assert.throws(() => tools.show_metrics(JSON.stringify({items: [{label: "测试", value: "1"}],

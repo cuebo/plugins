@@ -125,6 +125,11 @@ function basicCommonCardNode(card, index) {
   var id = "common-card-" + index;
   var children = [];
   var accent = basicAccent(card.trend);
+  if (card.type === "detailList") {
+    return {id: id, descriptionList: {title: card.name,
+      items: card.rows.map(function(row) { return {title: row.name, value: {text: row.value}}; })
+    }};
+  }
   if (card.type === "metric") {
     var heading = [{id: id + "-name", text: {text: card.name, style: "PLUGIN_TEXT_STYLE_TITLE"}}];
     if (card.icon) heading.unshift({id: id + "-icon", icon: {
@@ -136,10 +141,6 @@ function basicCommonCardNode(card, index) {
   } else if (card.type === "summary") {
     children.push({id: id + "-name", text: {text: card.name, style: "PLUGIN_TEXT_STYLE_TITLE"}});
     children.push({id: id + "-body", text: {text: card.body}});
-  } else if (card.type === "detailList") {
-    children.push({id: id + "-list", descriptionList: {title: card.name,
-      items: card.rows.map(function(row) { return {title: row.name, value: {text: row.value}}; })
-    }});
   } else if (card.type === "chart") {
     var kind = card.chartKind === "bar" ? "PLUGIN_CHART_KIND_BAR"
       : card.chartKind === "donut" ? "PLUGIN_CHART_KIND_DONUT" : "PLUGIN_CHART_KIND_LINE";
