@@ -231,8 +231,8 @@ function showCards(raw) {
 
 registerTool("show_cards", showCards);
 
-// These are data examples, not new component types. Both the homepage and the
-// component catalog render them through the same reusable card composition.
+// These are data examples, not new component types. The plugin homepage renders
+// them through the same reusable card composition used for conversation cards.
 function basicCardExamples() {
   return [
     {title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
@@ -254,16 +254,6 @@ function basicCardExamplesGrid(gridId, prefix) {
   return {id:gridId,grid:{columns:2,spacing:10,children:basicCardExamples().map(function(card,index) {
     return renderCard(card,prefix ? prefix+"-"+index : index);
   })}};
-}
-
-function basicCardCatalogEntries() {
-  var names = ["日程", "资源", "趋势", "进度", "环境", "状态"];
-  var parts = ["文字与底栏", "资源摘要", "数值与面积图", "步骤与进度条", "状态与底栏", "事实与底栏"];
-  return basicCardExamples().map(function(card,index) {
-    return {id:"composed-card-"+index,title:names[index]+"卡片组合",subtitle:"通用组件组合",
-      description:"由 card、stack、text 等组件组成："+parts[index]+"。整卡点击查看详情。",
-      component:renderCard(card,"catalog-entry-"+index)};
-  });
 }
 
 function dashboard(ctx) {

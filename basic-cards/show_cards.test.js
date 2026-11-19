@@ -75,15 +75,9 @@ assert.equal(combinedCard.detailChildren.some(node => node.id.endsWith('-actions
 assert.equal(shown.components[0].grid.children[0].card.detailChildren.find(node => node.id.endsWith('-resource')).card.onTap.openURL,
   'https://example.com/report');
 const catalog = context.detail({route: 'catalog', config: {}});
-const gallery = catalog.components.find(node => node.id === 'composed-cards-grid');
 const catalogEntries = catalog.components.find(node => node.id === 'component-catalog').grid.children;
-assert.equal(gallery.grid.children.length, 6);
-assert.equal(gallery.grid.children.every(node => node.card.aspectRatio === 1 && node.card.expandOnTap), true);
-assert.equal(catalogEntries.filter(node => node.id.startsWith('composed-card-')).length, 6);
-assert.equal(catalogEntries.some(node => node.id === 'composed-card-2-catalog-card'), true);
-const trendExample = context.sheet({route: 'component:composed-card-2', config: {}}).components;
-assert.equal(trendExample.some(node => node.card && node.card.children.some(child => child.chart)), true);
-assert.equal(trendExample.some(node => node.id === 'sheet-code'), true);
+assert.equal(catalog.components.some(node => node.id === 'composed-cards-grid'), false);
+assert.equal(catalogEntries.some(node => node.id.startsWith('composed-card-')), false);
 const denseResult = JSON.parse(registered.show_cards(JSON.stringify({cards: [{
   title: '趋势', headline: '上周合计 48,300', detail: '峰值出现在周六',
   facts: [{text: '日均 6,900'}], points: [{label: '周一', value: 12}, {label: '周二', value: 18}],
