@@ -9,9 +9,8 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`basic-cards/`](basic-cards/) | 五种对话卡片；App 随附初始版本，插件商店可更新，内置版本可用于重置 | 插件商店 |
-| [`docker/`](docker/) | 在 Agent 选定的运行环境中查询 Docker 容器并显示状态卡片 | `https://github.com/cuebo/plugins/tree/main/docker` |
 | [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
-| [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
+| [`server-status/`](server-status/) | 展示服务器或 NAS 状态，并查询 Docker 容器卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
 
 ## 在 App 中安装
@@ -56,6 +55,6 @@ plugins/
 
 导入 `telegram-groups/` 后，给 Agent 配置专用 Bot Token，并把机器人加入目标群。读取工具会记录已发现的群，选择工具在 App 中展示群列表；回复、投票和群管理工具会在操作前请求确认。管理员操作需要给 Bot 相应权限。详细配置和读取限制见[插件说明](telegram-groups/README.md)。
 
-## 服务器状态插件
+## 服务器管理插件
 
-导入 [`server-status/`](server-status/) 后，把插件添加到已关联 SSH 环境并启用终端能力的 Agent。用户询问服务器状态时，Agent 先查询实际指标，再用插件生成一次性的原生监控卡片。详见[插件说明](server-status/README.md)。
+导入 [`server-status/`](server-status/) 后，把插件添加到已关联运行环境并启用终端能力的 Agent。它可展示服务器或 NAS 状态，也可在用户为 Agent 选定的默认环境中查询 Docker 容器并生成卡片。详见[插件说明](server-status/README.md)。

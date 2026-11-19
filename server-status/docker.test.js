@@ -2,9 +2,11 @@ const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
 
-const source = fs.readFileSync(__dirname + "/main.js", "utf8");
+const source = fs.readFileSync(__dirname + "/scripts/docker.js", "utf8");
 const manifest = JSON.parse(fs.readFileSync(__dirname + "/plugin.json", "utf8"));
 assert.deepStrictEqual(manifest.capabilities, ["ish_shell", "generative_ui"]);
+assert.strictEqual(manifest.id, "server-status");
+assert.strictEqual(manifest.tools.length, 3);
 
 function run(options = {}) {
   const tools = {};
