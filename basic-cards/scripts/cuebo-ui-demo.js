@@ -422,7 +422,7 @@ function demoComponentCatalog(ctx, label) {
     { id: "component-image", title: "图片", subtitle: "Image", description: "展示远程图片资源。", component: imageComponent },
     { id: "component-divider", title: "分隔线", subtitle: "Divider", description: "分隔上下内容区域。", component: dividerComponent },
     { id: "component-spacer", title: "间距", subtitle: "Spacer", description: "控制组件之间的留白。", component: spacerComponent }
-  ];
+  ].concat(basicCardCatalogEntries());
 }
 
 function demoComponentShowcase(ctx, label) {
@@ -437,6 +437,19 @@ function demoComponentShowcase(ctx, label) {
           { id: "plugin-detail-notice-body", text: { text: "页面布局、卡片、半弹层与代码展示均由插件动态返回。", style: "PLUGIN_TEXT_STYLE_CAPTION" } }
         ]
       }
+    },
+    {
+      id: "composed-cards-title",
+      text: { text: "通用卡片组合示例", style: "PLUGIN_TEXT_STYLE_TITLE" }
+    },
+    {
+      id: "composed-cards-explanation",
+      text: { text: "下面六张卡片由通用组件组合，不是六种专用组件。点击整卡看完整信息；下方目录可查看每张卡片的组件 JSON。", style: "PLUGIN_TEXT_STYLE_CAPTION" }
+    },
+    basicCardExamplesGrid("composed-cards-grid", "catalog"),
+    {
+      id: "component-catalog-title",
+      text: { text: "组件与组合代码", style: "PLUGIN_TEXT_STYLE_TITLE" }
     },
     {
       id: "component-catalog",
@@ -614,7 +627,7 @@ globalThis.widget = function(ctx) {
 globalThis.detail = function(ctx) {
   const label = demoLabel(ctx);
   return {
-    title: "NAS 示例详情",
+    title: ctx.route === "catalog" ? "组件目录" : "NAS 示例详情",
     navigationActions: demoNavigationActions(ctx),
     components: demoComponentShowcase(ctx, label)
   };

@@ -231,25 +231,47 @@ function showCards(raw) {
 
 registerTool("show_cards", showCards);
 
+// These are data examples, not new component types. Both the homepage and the
+// component catalog render them through the same reusable card composition.
+function basicCardExamples() {
+  return [
+    {title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
+      headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]},
+    {title:"文件详情",subtitle:"文档 · 12.4 MB",icon:"folder",accent:"blue",
+      resource:{title:"产品需求文档.pdf",subtitle:"更新于 09:42",icon:"doc.text.fill"}},
+    {title:"本周数据",subtitle:"较上周 +12.6%",icon:"chart.bar",accent:"green",
+      headline:"26,480",points:[{label:"周一",value:12},{label:"周二",value:18},{label:"周三",value:16},{label:"周四",value:24},{label:"周五",value:21},{label:"周六",value:27},{label:"周日",value:30}]},
+    {title:"订单进度",subtitle:"编号 · DP784392",icon:"shippingbox",accent:"orange",
+      headline:"运输中",detail:"预计周五送达",steps:[{title:"已发货"},{title:"运输中"},{title:"派送中"}],currentStep:1},
+    {title:"环境概览",subtitle:"北京市",icon:"cloud.sun",accent:"blue",
+      headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风3级"},{icon:"humidity",text:"湿度45%"}]},
+    {title:"设备状态",subtitle:"客厅 · 在线",icon:"hifispeaker",accent:"purple",
+      headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]}
+  ];
+}
+
+function basicCardExamplesGrid(gridId, prefix) {
+  return {id:gridId,grid:{columns:2,spacing:10,children:basicCardExamples().map(function(card,index) {
+    return renderCard(card,prefix ? prefix+"-"+index : index);
+  })}};
+}
+
+function basicCardCatalogEntries() {
+  var names = ["日程", "资源", "趋势", "进度", "环境", "状态"];
+  var parts = ["文字与底栏", "资源摘要", "数值与面积图", "步骤与进度条", "状态与底栏", "事实与底栏"];
+  return basicCardExamples().map(function(card,index) {
+    return {id:"composed-card-"+index,title:names[index]+"卡片组合",subtitle:"通用组件组合",
+      description:"由 card、stack、text 等组件组成："+parts[index]+"。整卡点击查看详情。",
+      component:renderCard(card,"catalog-entry-"+index)};
+  });
+}
+
 function dashboard(ctx) {
   return {
     title:"基础卡片",
     components:[
       {id:"demo-label",text:{text:"点击卡片查看完整信息 · 示例数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
-      {id:"demo-grid",grid:{columns:2,spacing:10,children:[
-      renderCard({title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
-        headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]},0),
-      renderCard({title:"文件详情",subtitle:"文档 · 12.4 MB",icon:"folder",accent:"blue",
-        resource:{title:"产品需求文档.pdf",subtitle:"更新于 09:42",icon:"doc.text.fill"}},1),
-      renderCard({title:"本周数据",subtitle:"较上周 +12.6%",icon:"chart.bar",accent:"green",
-        headline:"26,480",points:[{label:"周一",value:12},{label:"周二",value:18},{label:"周三",value:16},{label:"周四",value:24},{label:"周五",value:21},{label:"周六",value:27},{label:"周日",value:30}]},2),
-      renderCard({title:"订单进度",subtitle:"编号 · DP784392",icon:"shippingbox",accent:"orange",
-        headline:"运输中",detail:"预计周五送达",steps:[{title:"已发货"},{title:"运输中"},{title:"派送中"}],currentStep:1},3),
-      renderCard({title:"环境概览",subtitle:"北京市",icon:"cloud.sun",accent:"blue",
-        headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风3级"},{icon:"humidity",text:"湿度45%"}]},4),
-      renderCard({title:"设备状态",subtitle:"客厅 · 在线",icon:"hifispeaker",accent:"purple",
-        headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]},5)
-      ]}},
+      basicCardExamplesGrid("demo-grid",""),
       {id:"catalog-link",button:{title:"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
         onTap:{navigate:{surface:"detail",route:"catalog"}}}}
     ]
