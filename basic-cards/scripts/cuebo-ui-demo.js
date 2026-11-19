@@ -169,11 +169,7 @@ function demoComponentCatalog(ctx, label) {
   };
   const buttonComponent = {
     id: "render-button",
-    stack: {spacing: 10, children: [
-      {id: "render-button-small", button: {title: "小按钮", appearance: {accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_SMALL", iconSource: {systemName: "bolt.circle"}, variant: "PLUGIN_COMPONENT_VARIANT_FILLED"}, onTap: {plugin: {actionId: "refresh"}}}},
-      {id: "render-button-medium", button: {title: "中按钮", appearance: {accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_MEDIUM", iconSource: {systemName: "bolt.circle"}, variant: "PLUGIN_COMPONENT_VARIANT_FILLED"}, onTap: {plugin: {actionId: "refresh"}}}},
-      {id: "render-button-large", button: {title: "大按钮", appearance: {accent: demoAccent(ctx), size: "PLUGIN_COMPONENT_SIZE_LARGE", iconSource: {systemName: "bolt.circle"}, variant: "PLUGIN_COMPONENT_VARIANT_FILLED"}, onTap: {plugin: {actionId: "refresh"}}}}
-    ]}
+    button: { title: "Button", subtitle: "点击触发插件 action", appearance: { accent: demoAccent(ctx), iconSource: { systemName: "bolt.circle" }, variant: "PLUGIN_COMPONENT_VARIANT_FILLED" }, onTap: { plugin: { actionId: "refresh" } } }
   };
   const toggleComponent = {
     id: "render-toggle",
@@ -259,22 +255,6 @@ function demoComponentCatalog(ctx, label) {
   const areaChartComponent = {
     id: "render-area-chart",
     chart: { title: "Chart Area", kind: "PLUGIN_CHART_KIND_AREA", points: demoMemoryPoints(), options: { min: 0, max: 100, showLabels: true }, appearance: { accent: "PLUGIN_ACCENT_GREEN" } }
-  };
-  const today = new Date();
-  const contributionYear = today.getUTCFullYear();
-  const firstDay = Date.UTC(contributionYear, 0, 1);
-  const lastDay = Date.UTC(contributionYear, today.getUTCMonth(), today.getUTCDate());
-  const contributionDays = [];
-  for (let time = firstDay, index = 0; time <= lastDay; time += 86400000, index++) {
-    const value = index % 3 === 0 || index % 11 === 0 ? 0 : index * 7 % 13;
-    contributionDays.push({date: new Date(time).toISOString().slice(0, 10), value: value,
-      level: value === 0 ? 0 : Math.min(4, Math.ceil(value / 3))});
-  }
-  const calendarHeatmapComponent = {
-    id: "render-calendar-heatmap",
-    calendarHeatmap: {title: contributionYear + " 年贡献活动（演示）",
-      startDate: contributionYear + "-01-01", endDate: new Date(lastDay).toISOString().slice(0, 10),
-      days: contributionDays, appearance: {accent: "PLUGIN_ACCENT_GREEN"}}
   };
   const barChartComponent = {
     id: "render-bar-chart",
@@ -413,7 +393,7 @@ function demoComponentCatalog(ctx, label) {
     { id: "component-text", title: "文本", subtitle: "Text", description: "展示标题、正文和说明文本。", component: textComponent },
     { id: "component-value", title: "数值", subtitle: "Value", description: "展示数值、单位、趋势和状态。", component: valueComponent },
     { id: "component-badge", title: "徽标", subtitle: "Badge", description: "展示简短状态和值。", component: badgeComponent },
-    { id: "component-button", title: "按钮", subtitle: "Button", description: "小、中、大三种尺寸，文字居中并触发插件 Action。", component: buttonComponent },
+    { id: "component-button", title: "按钮", subtitle: "Button", description: "触发插件受控 Action。", component: buttonComponent },
     { id: "component-toggle", title: "开关", subtitle: "Toggle", description: "切换布尔状态并触发插件 Action。", component: toggleComponent },
     { id: "component-bottom-sheet", title: "半弹层", subtitle: "Bottom Sheet", description: "打开支持多档高度的原生弹层。", component: bottomSheetComponent },
     { id: "component-list", title: "列表", subtitle: "List", description: "展示多行项目及交互动作。", component: listComponent },
@@ -422,7 +402,6 @@ function demoComponentCatalog(ctx, label) {
     { id: "component-line-chart", title: "折线图", subtitle: "Chart Line", description: "展示连续趋势数据。", component: lineChartComponent },
     { id: "component-multi-line-chart", title: "多序列折线图", subtitle: "Multi-series Line Chart", description: "在同一坐标系对比多组趋势数据。", component: multiLineChartComponent },
     { id: "component-area-chart", title: "面积图", subtitle: "Chart Area", description: "展示面积填充的趋势数据。", component: areaChartComponent },
-    { id: "component-calendar-heatmap", title: "提交热力图", subtitle: "Calendar Heatmap", description: "按日期展示 GitHub 风格的贡献强度，使用演示数据。", component: calendarHeatmapComponent },
     { id: "component-bar-chart", title: "柱状图", subtitle: "Chart Bar", description: "展示柱状对比数据。", component: barChartComponent },
     { id: "component-donut-chart", title: "环形图", subtitle: "Chart Donut", description: "展示数据占比分布。", component: donutChartComponent },
     { id: "component-gauge-chart", title: "仪表图", subtitle: "Chart Gauge", description: "展示单项使用率仪表。", component: gaugeChartComponent },
@@ -634,29 +613,14 @@ globalThis.widget = function(ctx) {
 
 globalThis.detail = function(ctx) {
   const label = demoLabel(ctx);
-  if (ctx.route === "common-cards") return basicCommonCardDemoPage();
   return {
-    title: ctx.route === "system-components" ? "系统组件" : "NAS 示例详情",
+    title: "NAS 示例详情",
     navigationActions: demoNavigationActions(ctx),
     components: demoComponentShowcase(ctx, label)
   };
 };
 
 globalThis.sheet = function(ctx) {
-  if (ctx.route === "metric-detail" || ctx.route === "common-page") {
-    var metric = JSON.parse(host.storage("get", "active-metric-detail"));
-    host.storage("delete", "active-metric-detail");
-    if (!metric || !metric.label || !metric.value) {
-      return {title: "页面详情", components: [{id: "metric-empty", stateBlock: {
-        kind: "PLUGIN_STATE_EMPTY", title: "页面已失效", message: "请重新生成卡片。"
-      }}]};
-    }
-    var cards = metric.cards && metric.cards.length ? metric.cards : [{
-      type:"metric",name:metric.label,value:metric.value,subtitle:metric.change,
-      icon:metric.icon,trend:metric.trend
-    }];
-    return basicCommonPage(metric.pageTitle || "指标详情", cards);
-  }
   if (ctx.route === "navigation-danger") {
     return {
       title: "危险操作示例",
@@ -669,25 +633,7 @@ globalThis.sheet = function(ctx) {
   };
 };
 
-function basicOpenCommonPage(ctx, route) {
-  var params = ctx.params || {};
-  if (!params.label || !params.value) return {effects: [{toast: {text: "页面数据不可用"}}]};
-  var cards = basicDecodeCardParams(params);
-  host.storage("put", "active-metric-detail", JSON.stringify({
-    label: params.label, value: params.value, change: params.change || "",
-    trend: params.trend || "", icon: params.icon || "",
-    pageTitle: params.pageTitle || "页面详情", cards: cards
-  }));
-  return {effects: [{navigate: {surface: "sheet", route: route}}]};
-}
-
 globalThis.actions = {
-  openMetricDetail: function(ctx) {
-    return basicOpenCommonPage(ctx, "metric-detail");
-  },
-  openCommonPage: function(ctx) {
-    return basicOpenCommonPage(ctx, "common-page");
-  },
   openDetail: function(ctx) {
     return {
       effects: [

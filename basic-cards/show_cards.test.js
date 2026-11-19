@@ -1,0 +1,37 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+
+let shown;
+const registered = {};
+const context = {
+  registerTool(name, handler) { registered[name] = handler; },
+  host: { ui(action, raw) {
+    assert.equal(action, 'show');
+    shown = JSON.parse(raw);
+    return JSON.stringify({ok: true});
+  } }
+};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync(__dirname + '/scripts/cuebo-ui-demo.js', 'utf8'), context);
+vm.runInContext(fs.readFileSync(__dirname + '/main.js', 'utf8'), context);
+
+assert.deepEqual(Object.keys(registered), ['show_cards']);
+const result = JSON.parse(registered.show_cards(JSON.stringify({cards: [
+  {title: '日程', headline: '评审会', facts: [{text: '会议室 301'}]},
+  {title: '文件', resource: {title: '需求文档.pdf', url: 'https://example.com/doc'}},
+  {title: '趋势', headline: '26,480', points: [{label: '周一', value: 12}, {label: '周二', value: 18}]},
+  {title: '进度', headline: '运输中', steps: [{title: '已发货'}, {title: '运输中'}], current_step: 1},
+  {title: '环境', headline: '12°C', footer: [{text: '湿度 45%'}]},
+  {title: '设备', headline: '运行中', detail: '已运行 3 小时'}
+]})));
+assert.equal(result.shown, true);
+assert.equal(shown.components.length, 6);
+assert.equal(shown.components[3].showcaseCard.currentStep, 1);
+assert.throws(() => registered.show_cards(JSON.stringify({cards: [
+  {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
+]})), /链接无效/);
+assert.throws(() => registered.show_cards(JSON.stringify({cards: [
+  {title: '趋势', points: [{label: '周一', value: 1}]}
+]})), /至少需要 2 个数据点/);
+console.log('show_cards passed');

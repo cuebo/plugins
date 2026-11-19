@@ -1,143 +1,105 @@
-function requireText(value, name, limit) {
+function requiredText(value, name, limit) {
   if (typeof value !== "string" || !value.trim() || value.length > limit) throw new Error(name + "无效");
   return value.trim();
 }
 
+function optionalText(value, name, limit) {
+  if (value == null || value === "") return "";
+  return requiredText(value, name, limit);
+}
+
+function optionalSymbol(value) {
+  var symbol = optionalText(value, "图标", 80);
+  if (symbol && !/^[a-z0-9][a-z0-9.-]*$/.test(symbol)) throw new Error("图标名称无效");
+  return symbol;
+}
+
 function optionalURL(value) {
   if (value == null || value === "") return "";
-  if (typeof value !== "string" || !/^https?:\/\/[^\s]+$/i.test(value) || value.length > 2048) throw new Error("图片地址无效");
+  if (typeof value !== "string" || !/^https?:\/\/[^\s]+$/i.test(value) || value.length > 2048) throw new Error("链接无效");
   return value;
 }
 
-function requireItems(value, min, max) {
-  if (!Array.isArray(value) || value.length < min || value.length > max) throw new Error("条目数量无效");
+function optionalItems(value, max) {
+  if (value == null) return [];
+  if (!Array.isArray(value) || value.length > max) throw new Error("条目数量无效");
   return value;
 }
 
-function showContent(title, components, count) {
-  var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
-  var response = JSON.parse(host.ui("show", JSON.stringify({
-    id:id,title:title,components:components
-  })));
-  return JSON.stringify({shown:response.ok === true,count:count});
+function note(item, name) {
+  if (!item || typeof item !== "object") throw new Error(name + "无效");
+  return {text:requiredText(item.text, name, 100), icon:optionalSymbol(item.icon)};
 }
 
-function basicPageParams(item, cards) {
-  var params = {label:item.label,value:item.value,change:item.change || "",
-    trend:item.trend || "",icon:item.icon || "",pageTitle:item.detailTitle || "指标详情"};
-  cards.forEach(function(card, index) { params["card" + index] = JSON.stringify(card); });
-  return params;
-}
-
-registerTool("show_list", function(raw) {
-  var input = JSON.parse(raw);
-  var items = requireItems(input.items, 1, 40).map(function(item) {
-    var url = optionalURL(item.url);
-    if (!url) throw new Error("条目链接无效");
-    var subtitle = typeof item.subtitle === "string" ? item.subtitle.trim() : "";
-    if (subtitle.length > 240) throw new Error("条目说明无效");
-    return {title:requireText(item.title,"条目标题",100),
-      subtitle:subtitle,url:url,
-      image_url:optionalURL(item.image_url)};
-  });
-  return showContent("链接列表",[{id:"links",list:{items:items.map(function(item) {
-    return {title:item.title,subtitle:item.subtitle,imageURL:item.image_url,
-      appearance:{accent:"PLUGIN_ACCENT_BLUE",iconSource:{systemName:"arrow.up.right.square"}},
-      onTap:{openURL:item.url}};
-  })}}],items.length);
-});
-
-registerTool("show_metrics", function(raw) {
-  var input = JSON.parse(raw);
-  var items = requireItems(input.items, 1, 12).map(function(item) {
-    var change = typeof item.change === "string" ? item.change : "";
-    var trend = typeof item.trend === "string" ? item.trend : "";
-    var icon = typeof item.icon === "string" ? item.icon.trim() : "";
-    if ((change && ["up","down","flat"].indexOf(trend) < 0) || (!change && trend)) throw new Error("趋势无效");
-    if (change.length > 1000) throw new Error("变化文案过长");
-    if (icon && !/^[a-z0-9][a-z0-9.-]{0,79}$/.test(icon)) throw new Error("图标名称无效");
-    return {label:requireText(item.label,"指标名称",50),value:requireText(item.value,"指标数值",80),
-      change:change,trend:trend,icon:icon,
-      detailTitle:basicOptionalText(item.detailTitle,"详情页标题",80) || item.label + "详情"};
-  });
-  var detailPages = basicPrepareDetailPages(input, items.length);
-  return showContent("指标",[{id:"metricCards",grid:{columns:2,spacing:10,
-    appearance:{container:"PLUGIN_CONTAINER_STYLE_NONE"},
-    children:items.map(function(item,index) {
-      var id = "metric-" + index;
-      var accent = item.trend === "up" ? "PLUGIN_ACCENT_GREEN" : item.trend === "down" ? "PLUGIN_ACCENT_RED" : "PLUGIN_ACCENT_BLUE";
-      var title = {id:id + "-label",text:{text:item.label,style:"PLUGIN_TEXT_STYLE_CAPTION"}};
-      if (item.icon) title = {id:id + "-header",stack:{axis:"PLUGIN_LAYOUT_AXIS_HORIZONTAL",spacing:5,children:[
-        {id:id + "-icon",icon:{appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT",iconSource:{systemName:item.icon}}}},
-        title
-      ]}};
-      var children = [
-        title,
-        {id:id + "-value",text:{text:item.value,style:"PLUGIN_TEXT_STYLE_VALUE"}}
-      ];
-      // Reserve the caption line even when this metric has no change text,
-      // so adjacent cards with and without captions keep the same height.
-      children.push({id:id + "-change",text:{text:item.change || "\u00a0",style:"PLUGIN_TEXT_STYLE_CAPTION"}});
-      var params = basicPageParams(item, detailPages[index]);
-      return {id:id,card:{appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
-        onTap:{plugin:{actionId:"openMetricDetail",params:params}},children:children}};
-    })
-  }}],items.length);
-});
-
-registerTool("show_page", function(raw) {
-  var input = JSON.parse(raw);
-  var title = requireText(input.title,"页面标题",80);
-  var cards = requireItems(input.cards,1,4).map(function(card) {
-    if (!card || typeof card !== "object" || Array.isArray(card)) throw new Error("页面卡片无效");
-    var item = {};
-    Object.keys(card).forEach(function(key) { item[key] = card[key]; });
-    item.metricIndex = 0;
-    return item;
-  });
-  var pageCards = basicPrepareDetailPages({
-    detailCards:cards,detailRows:input.rows,detailPoints:input.points
-  },1)[0];
-  var params = basicPageParams({label:title,value:pageCards.length + " 张卡片",detailTitle:title},pageCards);
-  return showContent(title,[{id:"page-entry",card:{
-    appearance:{accent:"PLUGIN_ACCENT_TEAL",variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
-    onTap:{plugin:{actionId:"openCommonPage",params:params}},children:[
-      {id:"page-entry-title",text:{text:title,style:"PLUGIN_TEXT_STYLE_TITLE"}},
-      {id:"page-entry-description",text:{text:pageCards.length + " 张通用卡片 · 点击查看",style:"PLUGIN_TEXT_STYLE_SUBTITLE"}}
-    ]
-  }}],pageCards.length);
-});
-
-function registerChart(name, kind) {
-  registerTool(name, function(raw) {
-    var input = JSON.parse(raw);
-    var items = requireItems(input.items, 2, 40).map(function(item) {
-      var value = Number(item.value);
-      if (!isFinite(value) || Math.abs(value) > 1000000000000 || (kind === "pie_chart" && value <= 0)) throw new Error("图表数值无效");
-      return {label:requireText(item.label,"数据名称",50),value:value};
+function showCards(raw) {
+  var input = JSON.parse(raw || "{}");
+  if (!Array.isArray(input.cards) || input.cards.length < 1 || input.cards.length > 6) throw new Error("卡片数量需为 1 至 6");
+  var components = input.cards.map(function(item, index) {
+    if (!item || typeof item !== "object") throw new Error("卡片无效");
+    var card = {
+      title:requiredText(item.title, "卡片标题", 60),
+      subtitle:optionalText(item.subtitle, "卡片副标题", 120),
+      icon:optionalSymbol(item.icon),
+      accent:optionalText(item.accent, "强调色", 10) || "blue",
+      headline:optionalText(item.headline, "主要内容", 100),
+      detail:optionalText(item.detail, "补充内容", 160),
+      facts:optionalItems(item.facts, 4).map(function(fact) { return note(fact, "事实"); }),
+      footer:optionalItems(item.footer, 3).map(function(fact) { return note(fact, "底部信息"); }),
+      actions:optionalItems(item.actions, 2).map(function(action) {
+        if (!action || typeof action !== "object") throw new Error("操作无效");
+        return {title:requiredText(action.title, "操作名称", 30),icon:optionalSymbol(action.icon),
+          url:requiredText(optionalURL(action.url), "操作链接", 2048)};
+      })
+    };
+    if (["blue", "green", "orange", "purple", "teal", "red"].indexOf(card.accent) < 0) throw new Error("强调色无效");
+    if (item.resource != null) {
+      var resource = item.resource;
+      if (!resource || typeof resource !== "object") throw new Error("资源无效");
+      card.resource = {title:requiredText(resource.title, "资源标题", 100),
+        subtitle:optionalText(resource.subtitle, "资源说明", 120),
+        icon:optionalSymbol(resource.icon),url:optionalURL(resource.url)};
+    }
+    var points = optionalItems(item.points, 24);
+    if (points.length === 1) throw new Error("趋势图至少需要 2 个数据点");
+    if (points.length) card.points = points.map(function(point) {
+      if (!point || typeof point !== "object" || typeof point.value !== "number" || !isFinite(point.value) || Math.abs(point.value) > 1e12) throw new Error("趋势数据无效");
+      return {label:requiredText(point.label, "数据标签", 50), value:point.value};
     });
-    var title = requireText(input.title,"标题",80);
-    var chartKind = kind === "pie_chart" ? "PLUGIN_CHART_KIND_DONUT" : kind === "line_chart" ? "PLUGIN_CHART_KIND_LINE" : "PLUGIN_CHART_KIND_BAR";
-    return showContent(title,[{id:"chart",chart:{title:title,kind:chartKind,points:items}}],items.length);
+    var steps = optionalItems(item.steps, 6);
+    if (steps.length) {
+      if (steps.length < 2 || typeof item.current_step !== "number" || !Number.isInteger(item.current_step) || item.current_step < 0 || item.current_step >= steps.length) throw new Error("进度步骤无效");
+      card.steps = steps.map(function(step) { return {title:requiredText(step.title, "步骤名称", 30)}; });
+      card.currentStep = item.current_step;
+    }
+    if (!card.headline && !card.detail && !card.facts.length && !card.resource && !card.points && !card.steps && !card.footer.length) throw new Error("卡片内容不能为空");
+    return {id:"showcase-" + index,showcaseCard:card};
   });
+  var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
+  var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:"信息卡片",components:components})));
+  return JSON.stringify({shown:response.ok === true,count:components.length});
 }
-registerChart("show_pie_chart","pie_chart");
-registerChart("show_line_chart","line_chart");
-registerChart("show_bar_chart","bar_chart");
+
+registerTool("show_cards", showCards);
 
 function dashboard(ctx) {
-  return {title:"基础卡片",components:[
-    {id:"system-components-entry",card:{
-      appearance:{accent:"PLUGIN_ACCENT_BLUE",variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
-      onTap:{navigate:{surface:"detail",route:"system-components"}},children:[
-        {id:"system-components-title",text:{text:"系统组件",style:"PLUGIN_TEXT_STYLE_TITLE"}},
-        {id:"system-components-description",text:{text:"查看当前支持的全部组件和交互示例",style:"PLUGIN_TEXT_STYLE_SUBTITLE"}}
-      ]}},
-    {id:"common-cards-entry",card:{
-      appearance:{accent:"PLUGIN_ACCENT_TEAL",variant:"PLUGIN_COMPONENT_VARIANT_TINTED"},
-      onTap:{navigate:{surface:"detail",route:"common-cards"}},children:[
-        {id:"common-cards-title",text:{text:"通用卡片",style:"PLUGIN_TEXT_STYLE_TITLE"}},
-        {id:"common-cards-description",text:{text:"查看指标、摘要、明细和图表卡组成的页面",style:"PLUGIN_TEXT_STYLE_SUBTITLE"}}
-      ]}}
-  ]};
+  return {
+    title:"基础卡片",
+    components:[
+      {id:"demo-label",text:{text:"以下为样式示例，数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
+      {id:"demo-event",showcaseCard:{title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
+        headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]}},
+      {id:"demo-resource",showcaseCard:{title:"文件详情",subtitle:"文档 · 12.4 MB",icon:"folder",accent:"blue",
+        resource:{title:"产品需求文档.pdf",subtitle:"更新于 09:42",icon:"doc.text.fill"}}},
+      {id:"demo-trend",showcaseCard:{title:"本周数据",subtitle:"较上周 +12.6%",icon:"chart.bar",accent:"green",
+        headline:"26,480",points:[{label:"周一",value:12},{label:"周二",value:18},{label:"周三",value:16},{label:"周四",value:24},{label:"周五",value:21},{label:"周六",value:27},{label:"周日",value:30}]}},
+      {id:"demo-progress",showcaseCard:{title:"订单进度",subtitle:"编号 · DP784392",icon:"shippingbox",accent:"orange",
+        headline:"运输中",detail:"预计周五送达",steps:[{title:"已发货"},{title:"运输中"},{title:"派送中"}],currentStep:1}},
+      {id:"demo-conditions",showcaseCard:{title:"环境概览",subtitle:"北京市",icon:"cloud.sun",accent:"blue",
+        headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风 3 级"},{icon:"humidity",text:"湿度 45%"}]}},
+      {id:"demo-status",showcaseCard:{title:"设备状态",subtitle:"客厅 · 在线",icon:"hifispeaker",accent:"purple",
+        headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]}},
+      {id:"catalog-link",button:{title:"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
+        onTap:{navigate:{surface:"detail",route:"catalog"}}}}
+    ]
+  };
 }
