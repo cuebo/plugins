@@ -1,0 +1,24 @@
+{
+  "id": "docker",
+  "name": "Docker 容器",
+  "description": "在 Agent 选定的运行环境中查询 Docker 容器，并以状态卡片展示实测信息",
+  "pe": "当用户询问 Docker 容器列表或某个容器的状态、资源占用、端口或卷时，可使用本插件。list_containers 在用户为该 Agent 选定的默认运行环境里查询容器；show_container 按容器名称或 ID 查询并显示卡片。不要自行填写环境 ID；插件会使用用户选定的默认环境。CPU、内存和网络数据来自本轮 docker stats；网络是累计 I/O，不是实时速率。查询失败时说明错误，不推测容器状态。卡片是一次查询快照，不会自动刷新。",
+  "version": "1.0.0",
+  "uiProtocol": "cuebo-v1",
+  "capabilities": ["ish_shell", "generative_ui"],
+  "files": {"main.js": "main.js"},
+  "tools": [
+    {
+      "name": "list_containers",
+      "description": "在用户为当前 Agent 选定的运行环境中列出 Docker 容器的名称、ID、镜像和状态；用于确定要查看的容器",
+      "parameters": {}
+    },
+    {
+      "name": "show_container",
+      "description": "在用户为当前 Agent 选定的运行环境中查询指定 Docker 容器，并显示包含状态、CPU、内存、累计网络 I/O、端口和卷数量的卡片",
+      "parameters": {
+        "container": {"type": "string", "description": "容器名称或 ID，先用 list_containers 确定；不含命令或 shell 语法", "required": true}
+      }
+    }
+  ]
+}

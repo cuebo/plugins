@@ -54,11 +54,12 @@ registerTool("greet", function (argsJSON) {
 | `host.attachments()` | 本轮用户消息的图片引用；经确认后可将指定图片上传到公网服务 | 上传前确认域名、图片和目标地址 |
 | `host.call("browser.*", …)` | App **内置浏览器当前页面**的标题、URL、HTML、截图和操作结果 | 包声明 `wk_browser`，Agent 启用浏览器 |
 | `host.call("photo.*", …)` | 当前对话最近一条用户消息里的图片及编辑预览、操作结果 | 包声明 `brightroom_photo`，Agent 启用图片编辑 |
+| `host.call("shell.execute", …)` | 在用户为 Agent 选定的默认运行环境执行命令，返回输出和退出码 | 包声明 `ish_shell`，Agent 启用运行环境；仅插件工具可调用 |
 | `host.ui("show"/"update", …)` | 在当前轮对话创建或更新原生组件卡片 | 包设置 `ui:true`，Agent 挂载该插件 |
 | `host.choose()` | 用户在选择弹层提交的选项或取消结果 | 仅插件工具，且工具声明 `onSelect` 回调 |
 | Eino middleware | 对应钩子的消息、工具列表、调用参数或结果 | 包声明对应回调 |
 
-普通工具不会自动收到完整聊天记录；但声明了 Eino middleware 的插件，其部分回调会收到本轮传给模型的 `messages`，可能包含对话上下文，应按敏感数据处理。`host.attachments` 只列出本轮图片引用，不返回文件路径或原始内容。插件目前**没有直接接口**读取其他插件数据、系统文件、剪切板、位置、日历、HomeKit、SSH 终端或运行环境命令。不能直接使用 Node.js、`require`、`fetch`、文件系统或任意系统命令。浏览器数据来自 cuebo 的内置浏览器，不是 Safari 或其他浏览器的登录数据。
+普通工具不会自动收到完整聊天记录；但声明了 Eino middleware 的插件，其部分回调会收到本轮传给模型的 `messages`，可能包含对话上下文，应按敏感数据处理。`host.attachments` 只列出本轮图片引用，不返回文件路径或原始内容。插件不能直接读取其他插件数据、系统文件、剪切板、位置、日历或 HomeKit。不能直接使用 Node.js、`require`、`fetch` 或文件系统；运行环境命令只能通过已授权的 `shell.execute` 进入 App 的环境路由。浏览器数据来自 cuebo 的内置浏览器，不是 Safari 或其他浏览器的登录数据。
 
 ## 配置：`host.config()`
 
@@ -132,7 +133,7 @@ var page = JSON.parse(host.call("browser.html", "{}"));
 return JSON.stringify({ok:!page.error,text:page.text,error:page.error});
 ```
 
-`browser.open` 是 App 内置浏览器操作，可以打开 HTTP/HTTPS 网页；它和 `host.request` 的独立 HTTPS 网络接口用途不同。当前 `host.call` **只接通浏览器与图片编辑**；界面展示使用单独的 `host.ui`。
+`browser.open` 是 App 内置浏览器操作，可以打开 HTTP/HTTPS 网页；它和 `host.request` 的独立 HTTPS 网络接口用途不同。插件工具的 `host.call` 还支持 `shell.execute`；界面展示使用单独的 `host.ui`。
 
 ## 本轮图片：`host.attachments()`
 

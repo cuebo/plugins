@@ -9,6 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`basic-cards/`](basic-cards/) | 五种对话卡片；App 随附初始版本，插件商店可更新，内置版本可用于重置 | 插件商店 |
+| [`docker/`](docker/) | 在 Agent 选定的运行环境中查询 Docker 容器并显示状态卡片 | `https://github.com/cuebo/plugins/tree/main/docker` |
 | [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`server-status/`](server-status/) | 把 Agent 实测的服务器或 NAS 指标展示为对话卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
@@ -39,7 +40,7 @@ plugins/
 
 `plugin.json` 至少声明唯一的 `id`、`name`、`version`、`files` 和 `tools`。`files` 中写相对插件目录的脚本路径；仓库文件里的值可以留空，App 导入时会读取对应脚本并填入内容。`main.js` 用 `registerTool(name, function(argsJSON) { ... })` 注册与 `tools` 声明同名的工具，返回字符串；建议返回 JSON 字符串。可选的 `pe` 是注入 Agent 的插件使用说明，只写调用时需要的内容。
 
-插件脚本运行在受限 JavaScript 环境中。可使用 `host.config`、`host.storage`、`host.choose`、`host.request`、`host.attachments`，以及在声明并启用对应能力后使用 `host.call` 调用浏览器或图片能力。设置 `ui:true` 并定义 `dashboard(ctx)`、`detail(ctx)`、可选的 `sheet(ctx)` 和 `actions`，就能在 Agent 的插件页展示原生界面。Agent 挂载该插件后，还可用 `host.ui("show", JSON.stringify({id:"demo",title:"标题",components:[{id:"text",component:"Text",text:"内容"},{id:"root",component:"Column",children:["text"]}]}))` 展示对话卡片；同一轮用相同 ID 的 `host.ui("update", JSON.stringify({...}))` 更新。页面和卡片可复用同一组件及动作。App 随附的[基础卡片插件](basic-cards/)提供链接列表、指标和三种图表。网络请求通过 App 的 HTTPS 接口，首次访问未授权域名时自动请用户确认；同意后保存到该 Agent 的插件白名单。脚本不能直接使用 Node.js 或文件系统。不要把密钥写进仓库；需要密钥时使用 `config` 的 `secret` 字段，由用户在 App 中配置。
+插件脚本运行在受限 JavaScript 环境中。可使用 `host.config`、`host.storage`、`host.choose`、`host.request`、`host.attachments`，以及在声明并启用对应能力后使用 `host.call` 调用浏览器、图片或运行环境能力。运行环境命令仅在插件工具内使用 `shell.execute`，省略环境 ID 时走用户为 Agent 选定的默认环境。设置 `ui:true` 并定义 `dashboard(ctx)`、`detail(ctx)`、可选的 `sheet(ctx)` 和 `actions`，就能在 Agent 的插件页展示原生界面。Agent 挂载该插件后，还可用 `host.ui("show", JSON.stringify({id:"demo",title:"标题",components:[{id:"text",component:"Text",text:"内容"},{id:"root",component:"Column",children:["text"]}]}))` 展示对话卡片；同一轮用相同 ID 的 `host.ui("update", JSON.stringify({...}))` 更新。页面和卡片可复用同一组件及动作。App 随附的[基础卡片插件](basic-cards/)提供链接列表、指标和三种图表。网络请求通过 App 的 HTTPS 接口，首次访问未授权域名时自动请用户确认；同意后保存到该 Agent 的插件白名单。脚本不能直接使用 Node.js 或文件系统。不要把密钥写进仓库；需要密钥时使用 `config` 的 `secret` 字段，由用户在 App 中配置。
 
 使用嵌套组件协议的插件可声明 `"uiProtocol":"cuebo-v1"`，沿用组件 JSON 和点击动作；App 内置的[基础卡片](basic-cards/)插件界面展示完整组件演示。
 

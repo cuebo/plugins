@@ -11,6 +11,15 @@
       "networkHosts": []
     },
     {
+      "id": "docker",
+      "name": "Docker 容器",
+      "description": "在 Agent 选定的运行环境中查询 Docker 容器，并以状态卡片展示实测信息",
+      "version": "1.0.0",
+      "path": "docker",
+      "toolCount": 2,
+      "networkHosts": []
+    },
+    {
       "id": "github",
       "name": "GitHub",
       "description": "查看个人概览、贡献日历和仓库概览卡片，以及管理 Issue 与 Pull Request。",
