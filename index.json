@@ -5,7 +5,7 @@
       "id": "basic-cards",
       "name": "基础卡片",
       "description": "在对话中展示通用信息卡片，支持摘要、资源、趋势、步骤进度与状态。",
-      "version": "1.13.0",
+      "version": "1.13.1",
       "path": "basic-cards",
       "toolCount": 1,
       "networkHosts": []

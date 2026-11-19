@@ -36,6 +36,9 @@ assert.equal(shown.components[0].grid.children[0].card.children[1].text.fontSize
 const withFooter = shown.components[0].grid.children[4].card.bottomChildren;
 assert.equal(withFooter.length, 1);
 assert.equal(withFooter[0].id.endsWith('-footer'), true);
+assert.equal(withFooter[0].card.expandOnTap, true);
+assert.equal(withFooter[0].card.detailTitle, '环境');
+assert.equal(withFooter[0].card.detailChildren.some(node => node.id.endsWith('-headline')), true);
 assert.equal(shown.components[0].grid.children[3].card.children.find(node => node.progress).progress.progress, 1);
 assert.equal(JSON.parse(registered.show_cards(JSON.stringify({cards: [
   {title: '状态', headline: '正常'}

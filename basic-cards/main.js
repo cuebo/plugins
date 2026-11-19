@@ -170,7 +170,8 @@ function renderCard(card, index, summary) {
     var visibleFooter = card.footer.slice(0,2);
     var footerLength = visibleFooter.reduce(function(total,item) { return total + item.text.length; },0);
     var footerAxis = visibleFooter.length <= 2 && footerLength <= 11 ? "PLUGIN_STACK_AXIS_HORIZONTAL" : "PLUGIN_STACK_AXIS_VERTICAL";
-    bottom.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:visibleFooter.map(function(item,i) { return line("footer-"+i,item,24); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
+    bottom.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:visibleFooter.map(function(item,i) { return line("footer-"+i,item,24); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6,
+      expandOnTap:true,detailTitle:card.title,detailChildren:renderDetail(card,id+"-footer",accent)}});
   }
   return {id:id,card:{children:body,bottomChildren:bottom,detailTitle:card.title,detailChildren:renderDetail(card,id,accent),expandOnTap:true,
     appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},aspectRatio:1,padding:8,spacing:4}};
