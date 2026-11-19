@@ -30,12 +30,16 @@ assert.equal(result.shortenedCards.length, 0);
 assert.equal(shown.components.length, 1);
 assert.equal(shown.components[0].grid.columns, 2);
 assert.equal(shown.components[0].grid.children.length, 6);
+assert.equal(shown.components[0].grid.children.every(node => node.card.aspectRatio === 1), true);
 assert.equal(shown.components[0].grid.children[0].card.children[1].text.fontSize, 18);
+const withFooter = shown.components[0].grid.children[4].card.children;
+assert.equal(withFooter.at(-2).spacer.length, 0);
+assert.equal(withFooter.at(-1).id.endsWith('-footer'), true);
 assert.equal(shown.components[0].grid.children[3].card.children.find(node => node.progress).progress.progress, 1);
 assert.equal(JSON.parse(registered.show_cards(JSON.stringify({cards: [
   {title: '状态', headline: '正常'}
 ]}))).count, 1);
-assert.equal(shown.components[0].grid.columns, 1);
+assert.equal(shown.components[0].grid.columns, 2);
 const longResult = JSON.parse(registered.show_cards(JSON.stringify({cards: [{
   title: '空间主要被什么占用', subtitle: 'NAS 主机的详细磁盘统计',
   facts: [
@@ -51,6 +55,15 @@ const cardNodes = shown.components[0].grid.children[0].card.children;
 assert.equal(cardNodes[0].stack.children[0].stack.children[0].text.text.endsWith('…'), true);
 assert.equal(cardNodes.filter(node => node.id.includes('-fact-')).length, 2);
 assert.equal(cardNodes.find(node => node.id.endsWith('-footer')).card.children[0].stack.children.length, 2);
+JSON.parse(registered.show_cards(JSON.stringify({cards: [{
+  title: '文件', resource: {title: '报告', url: 'https://example.com/report'},
+  actions: [{title: '预览', url: 'https://example.com/report'}],
+  footer: [{text: '今天更新'}]
+}]})));
+const combinedNodes = shown.components[0].grid.children[0].card.children;
+assert.equal(combinedNodes.at(-2).spacer.length, 0);
+assert.equal(combinedNodes.at(-1).id.endsWith('-footer'), true);
+assert.equal(combinedNodes.findIndex(node => node.id.endsWith('-actions')) < combinedNodes.findIndex(node => node.id.endsWith('-footer')), true);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);
