@@ -130,47 +130,50 @@ function renderCard(card, index, summary) {
   if (card.icon) header.push(icon("header-icon",card.icon,true));
   header.push({id:id+"-header-copy",stack:{spacing:2,children:headerText}});
   var body = [{id:id+"-header",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:header}}];
+  var bottom = [];
+  var hasResource = !!card.resource;
+  var hasChart = !!(card.points && card.points.length >= 2);
+  var hasSteps = !!(card.steps && card.steps.length >= 2);
+  var primary = hasResource ? "resource" : hasChart ? "chart" : hasSteps ? "steps" : "facts";
   if (card.headline) body.push(label("headline",card.headline,18,"PLUGIN_FONT_WEIGHT_BOLD",false,18));
-  if (card.detail) body.push(label("detail",card.detail,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,34));
-  if (card.facts && card.facts.length > 2 && summary) summary.shortened = true;
-  (card.facts || []).slice(0,2).forEach(function(item,i) { body.push(line("fact-"+i,item,24)); });
-  if (card.resource) {
+  if (card.detail) {
+    if (primary === "facts" && (!(card.facts || []).length || !(card.footer || []).length)) {
+      body.push(label("detail",card.detail,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,30));
+    } else if (summary) summary.shortened = true;
+  }
+  if (card.facts && card.facts.length > (primary === "facts" ? 2 : 0) && summary) summary.shortened = true;
+  if (primary === "facts") (card.facts || []).slice(0,2).forEach(function(item,i) { body.push(line("fact-"+i,item,24)); });
+  if (primary === "resource") {
     var resourceCopy = [label("resource-title",card.resource.title,11,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false,22)];
     if (card.resource.subtitle) resourceCopy.push(label("resource-subtitle",card.resource.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,20));
     var resourceChildren = [];
     if (card.resource.icon) resourceChildren.push(icon("resource-icon",card.resource.icon,true));
     resourceChildren.push({id:id+"-resource-copy",stack:{spacing:2,children:resourceCopy}});
     var resource = {children:[{id:id+"-resource-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:6,children:resourceChildren}}],appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:7};
-    if (card.resource.url) resource.onTap = {openURL:card.resource.url};
     body.push({id:id+"-resource",card:resource});
   }
-  if (card.points && card.points.length >= 2) {
-    body.push({id:id+"-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:58,points:card.points,appearance:appearance,options:{hideAxes:true}}});
+  if (hasChart && primary !== "chart" && summary) summary.shortened = true;
+  if (primary === "chart") {
+    body.push({id:id+"-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:56,points:card.points,appearance:appearance,options:{hideAxes:true}}});
   }
-  if (card.steps && card.steps.length >= 2) {
+  if (hasSteps && primary !== "steps" && summary) summary.shortened = true;
+  if (primary === "steps") {
     var current = Math.max(0,Math.min(card.steps.length-1,card.currentStep || 0));
     body.push({id:id+"-progress",progress:{progress:current/(card.steps.length-1),appearance:appearance}});
     body.push({id:id+"-steps",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:3,children:card.steps.map(function(step,i) {
       return label("step-"+i,step.title,10,"PLUGIN_FONT_WEIGHT_REGULAR",i>current,12);
     })}});
   }
-  if (card.actions && card.actions.length) {
-    if (!card.footer || !card.footer.length) body.push({id:id+"-actions-spacer",spacer:{length:0}});
-    body.push({id:id+"-actions-divider",divider:{}});
-    body.push({id:id+"-actions",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:4,children:card.actions.map(function(action,i) {
-      return {id:id+"-action-"+i,button:{title:compactText(action.title,12,summary),appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:"PLUGIN_COMPONENT_VARIANT_PLAIN",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
-    })}});
-  }
+  if (card.actions && card.actions.length && summary) summary.shortened = true;
   if (card.footer && card.footer.length) {
-    body.push({id:id+"-footer-spacer",spacer:{length:0}});
     if (card.footer.length > 2 && summary) summary.shortened = true;
     var visibleFooter = card.footer.slice(0,2);
     var footerLength = visibleFooter.reduce(function(total,item) { return total + item.text.length; },0);
     var footerAxis = visibleFooter.length <= 2 && footerLength <= 11 ? "PLUGIN_STACK_AXIS_HORIZONTAL" : "PLUGIN_STACK_AXIS_VERTICAL";
-    body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:visibleFooter.map(function(item,i) { return line("footer-"+i,item,24); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
+    bottom.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:visibleFooter.map(function(item,i) { return line("footer-"+i,item,24); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
   }
-  return {id:id,card:{children:body,detailTitle:card.title,detailChildren:renderDetail(card,id,accent),expandOnTap:true,
-    appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},aspectRatio:1,padding:9,spacing:6}};
+  return {id:id,card:{children:body,bottomChildren:bottom,detailTitle:card.title,detailChildren:renderDetail(card,id,accent),expandOnTap:true,
+    appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},aspectRatio:1,padding:8,spacing:4}};
 }
 
 function showCards(raw) {

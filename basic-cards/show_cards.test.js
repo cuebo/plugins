@@ -33,9 +33,9 @@ assert.equal(shown.components[0].grid.children.length, 6);
 assert.equal(shown.components[0].grid.children.every(node => node.card.aspectRatio === 1), true);
 assert.equal(shown.components[0].grid.children.every(node => node.card.expandOnTap === true), true);
 assert.equal(shown.components[0].grid.children[0].card.children[1].text.fontSize, 18);
-const withFooter = shown.components[0].grid.children[4].card.children;
-assert.equal(withFooter.at(-2).spacer.length, 0);
-assert.equal(withFooter.at(-1).id.endsWith('-footer'), true);
+const withFooter = shown.components[0].grid.children[4].card.bottomChildren;
+assert.equal(withFooter.length, 1);
+assert.equal(withFooter[0].id.endsWith('-footer'), true);
 assert.equal(shown.components[0].grid.children[3].card.children.find(node => node.progress).progress.progress, 1);
 assert.equal(JSON.parse(registered.show_cards(JSON.stringify({cards: [
   {title: '状态', headline: '正常'}
@@ -53,10 +53,10 @@ const longResult = JSON.parse(registered.show_cards(JSON.stringify({cards: [{
 }]})));
 assert.deepEqual(longResult.shortenedCards, [1]);
 const cardNodes = shown.components[0].grid.children[0].card.children;
+const detail = shown.components[0].grid.children[0].card;
 assert.equal(cardNodes[0].stack.children[0].stack.children[0].text.text.endsWith('…'), true);
 assert.equal(cardNodes.filter(node => node.id.includes('-fact-')).length, 2);
-assert.equal(cardNodes.find(node => node.id.endsWith('-footer')).card.children[0].stack.children.length, 2);
-const detail = shown.components[0].grid.children[0].card;
+assert.equal(detail.bottomChildren[0].card.children[0].stack.children.length, 2);
 assert.equal(detail.detailTitle, '空间主要被什么占用');
 assert.equal(detail.detailChildren.filter(node => node.id.includes('-fact-')).length, 4);
 assert.equal(detail.detailChildren.filter(node => node.id.includes('-footer-') && node.stack).length, 3);
@@ -67,12 +67,24 @@ JSON.parse(registered.show_cards(JSON.stringify({cards: [{
   actions: [{title: '预览', url: 'https://example.com/report'}],
   footer: [{text: '今天更新'}]
 }]})));
-const combinedNodes = shown.components[0].grid.children[0].card.children;
-assert.equal(combinedNodes.at(-2).spacer.length, 0);
-assert.equal(combinedNodes.at(-1).id.endsWith('-footer'), true);
-assert.equal(combinedNodes.findIndex(node => node.id.endsWith('-actions')) < combinedNodes.findIndex(node => node.id.endsWith('-footer')), true);
+const combinedCard = shown.components[0].grid.children[0].card;
+assert.equal(combinedCard.bottomChildren[0].id.endsWith('-footer'), true);
+assert.equal(combinedCard.children.some(node => node.button || node.id.endsWith('-actions')), false);
+assert.equal(combinedCard.children.find(node => node.id.endsWith('-resource')).card.onTap, undefined);
+assert.equal(combinedCard.detailChildren.some(node => node.id.endsWith('-actions')), true);
 assert.equal(shown.components[0].grid.children[0].card.detailChildren.find(node => node.id.endsWith('-resource')).card.onTap.openURL,
   'https://example.com/report');
+const denseResult = JSON.parse(registered.show_cards(JSON.stringify({cards: [{
+  title: '趋势', headline: '上周合计 48,300', detail: '峰值出现在周六',
+  facts: [{text: '日均 6,900'}], points: [{label: '周一', value: 12}, {label: '周二', value: 18}],
+  footer: [{text: '演示数据'}]
+}]})));
+assert.deepEqual(denseResult.shortenedCards, [1]);
+const denseCard = shown.components[0].grid.children[0].card;
+assert.equal(denseCard.children.some(node => node.id.endsWith('-detail') || node.id.includes('-fact-')), false);
+assert.equal(denseCard.children.some(node => node.chart), true);
+assert.equal(denseCard.bottomChildren.length, 1);
+assert.equal(denseCard.detailChildren.some(node => node.id.endsWith('-fact-0')), true);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);
