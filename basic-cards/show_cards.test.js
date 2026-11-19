@@ -27,7 +27,8 @@ const result = JSON.parse(registered.show_cards(JSON.stringify({cards: [
 ]})));
 assert.equal(result.shown, true);
 assert.equal(shown.components.length, 6);
-assert.equal(shown.components[3].showcaseCard.currentStep, 1);
+assert.equal(shown.components[0].card.children[1].text.fontSize, 22);
+assert.equal(shown.components[3].card.children.find(node => node.progress).progress.progress, 1);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);

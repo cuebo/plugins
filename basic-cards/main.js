@@ -31,6 +31,65 @@ function note(item, name) {
   return {text:requiredText(item.text, name, 100), icon:optionalSymbol(item.icon)};
 }
 
+// The plugin owns the card composition. The host only renders reusable Cuebo nodes.
+function renderCard(card, index) {
+  var id = "basic-card-" + index;
+  var accent = "PLUGIN_ACCENT_" + (card.accent || "blue").toUpperCase();
+  var appearance = {accent:accent};
+  function label(suffix, value, size, weight, muted) {
+    var content = {text:value,fontSize:size,weight:weight};
+    if (muted) content.style = "PLUGIN_TEXT_STYLE_SUBTITLE";
+    return {id:id+"-"+suffix,text:content};
+  }
+  function icon(suffix, symbol, tile) {
+    return {id:id+"-"+suffix,icon:{appearance:{accent:accent,iconSource:{systemName:symbol},variant:tile?"PLUGIN_COMPONENT_VARIANT_TILE":""}}};
+  }
+  function line(suffix, item) {
+    var children = [];
+    if (item.icon) children.push(icon(suffix+"-icon",item.icon,false));
+    children.push(label(suffix+"-text",item.text,14,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    return {id:id+"-"+suffix,stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:children}};
+  }
+  var headerText = [label("title",card.title,17,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
+  if (card.subtitle) headerText.push(label("subtitle",card.subtitle,13,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  var header = [];
+  if (card.icon) header.push(icon("header-icon",card.icon,true));
+  header.push({id:id+"-header-copy",stack:{spacing:3,children:headerText}});
+  var body = [{id:id+"-header",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:12,children:header}}];
+  if (card.headline) body.push(label("headline",card.headline,22,"PLUGIN_FONT_WEIGHT_BOLD",false));
+  if (card.detail) body.push(label("detail",card.detail,14,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  (card.facts || []).forEach(function(item,i) { body.push(line("fact-"+i,item)); });
+  if (card.resource) {
+    var resourceCopy = [label("resource-title",card.resource.title,15,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
+    if (card.resource.subtitle) resourceCopy.push(label("resource-subtitle",card.resource.subtitle,13,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    var resourceChildren = [];
+    if (card.resource.icon) resourceChildren.push(icon("resource-icon",card.resource.icon,true));
+    resourceChildren.push({id:id+"-resource-copy",stack:{spacing:3,children:resourceCopy}});
+    var resource = {children:[{id:id+"-resource-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:12,children:resourceChildren}}],appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"}};
+    if (card.resource.url) resource.onTap = {openURL:card.resource.url};
+    body.push({id:id+"-resource",card:resource});
+  }
+  if (card.points && card.points.length >= 2) {
+    body.push({id:id+"-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:86,points:card.points,appearance:appearance,options:{hideAxes:true}}});
+  }
+  if (card.steps && card.steps.length >= 2) {
+    var current = Math.max(0,Math.min(card.steps.length-1,card.currentStep || 0));
+    body.push({id:id+"-progress",progress:{title:card.steps[current].title,progress:current/(card.steps.length-1),appearance:appearance}});
+    body.push({id:id+"-steps",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.steps.map(function(step,i) {
+      return label("step-"+i,step.title,11,"PLUGIN_FONT_WEIGHT_REGULAR",i>current);
+    })}});
+  }
+  if (card.footer && card.footer.length) {
+    body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.footer.map(function(item,i) { return line("footer-"+i,item); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:8}});
+  }
+  if (card.actions && card.actions.length) {
+    body.push({id:id+"-actions",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.actions.map(function(action,i) {
+      return {id:id+"-action-"+i,button:{title:action.title,appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_SMALL",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
+    })}});
+  }
+  return {id:id,card:{children:body,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:18,spacing:14}};
+}
+
 function showCards(raw) {
   var input = JSON.parse(raw || "{}");
   if (!Array.isArray(input.cards) || input.cards.length < 1 || input.cards.length > 6) throw new Error("卡片数量需为 1 至 6");
@@ -72,7 +131,7 @@ function showCards(raw) {
       card.currentStep = item.current_step;
     }
     if (!card.headline && !card.detail && !card.facts.length && !card.resource && !card.points && !card.steps && !card.footer.length) throw new Error("卡片内容不能为空");
-    return {id:"showcase-" + index,showcaseCard:card};
+    return renderCard(card,index);
   });
   var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
   var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:"信息卡片",components:components})));
@@ -86,18 +145,18 @@ function dashboard(ctx) {
     title:"基础卡片",
     components:[
       {id:"demo-label",text:{text:"以下为样式示例，数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
-      {id:"demo-event",showcaseCard:{title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
-        headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]}},
-      {id:"demo-resource",showcaseCard:{title:"文件详情",subtitle:"文档 · 12.4 MB",icon:"folder",accent:"blue",
-        resource:{title:"产品需求文档.pdf",subtitle:"更新于 09:42",icon:"doc.text.fill"}}},
-      {id:"demo-trend",showcaseCard:{title:"本周数据",subtitle:"较上周 +12.6%",icon:"chart.bar",accent:"green",
-        headline:"26,480",points:[{label:"周一",value:12},{label:"周二",value:18},{label:"周三",value:16},{label:"周四",value:24},{label:"周五",value:21},{label:"周六",value:27},{label:"周日",value:30}]}},
-      {id:"demo-progress",showcaseCard:{title:"订单进度",subtitle:"编号 · DP784392",icon:"shippingbox",accent:"orange",
-        headline:"运输中",detail:"预计周五送达",steps:[{title:"已发货"},{title:"运输中"},{title:"派送中"}],currentStep:1}},
-      {id:"demo-conditions",showcaseCard:{title:"环境概览",subtitle:"北京市",icon:"cloud.sun",accent:"blue",
-        headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风 3 级"},{icon:"humidity",text:"湿度 45%"}]}},
-      {id:"demo-status",showcaseCard:{title:"设备状态",subtitle:"客厅 · 在线",icon:"hifispeaker",accent:"purple",
-        headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]}},
+      renderCard({title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
+        headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]},0),
+      renderCard({title:"文件详情",subtitle:"文档 · 12.4 MB",icon:"folder",accent:"blue",
+        resource:{title:"产品需求文档.pdf",subtitle:"更新于 09:42",icon:"doc.text.fill"}},1),
+      renderCard({title:"本周数据",subtitle:"较上周 +12.6%",icon:"chart.bar",accent:"green",
+        headline:"26,480",points:[{label:"周一",value:12},{label:"周二",value:18},{label:"周三",value:16},{label:"周四",value:24},{label:"周五",value:21},{label:"周六",value:27},{label:"周日",value:30}]},2),
+      renderCard({title:"订单进度",subtitle:"编号 · DP784392",icon:"shippingbox",accent:"orange",
+        headline:"运输中",detail:"预计周五送达",steps:[{title:"已发货"},{title:"运输中"},{title:"派送中"}],currentStep:1},3),
+      renderCard({title:"环境概览",subtitle:"北京市",icon:"cloud.sun",accent:"blue",
+        headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风 3 级"},{icon:"humidity",text:"湿度 45%"}]},4),
+      renderCard({title:"设备状态",subtitle:"客厅 · 在线",icon:"hifispeaker",accent:"purple",
+        headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]},5),
       {id:"catalog-link",button:{title:"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
         onTap:{navigate:{surface:"detail",route:"catalog"}}}}
     ]
