@@ -26,9 +26,15 @@ const result = JSON.parse(registered.show_cards(JSON.stringify({cards: [
   {title: '设备', headline: '运行中', detail: '已运行 3 小时'}
 ]})));
 assert.equal(result.shown, true);
-assert.equal(shown.components.length, 6);
-assert.equal(shown.components[0].card.children[1].text.fontSize, 22);
-assert.equal(shown.components[3].card.children.find(node => node.progress).progress.progress, 1);
+assert.equal(shown.components.length, 1);
+assert.equal(shown.components[0].grid.columns, 2);
+assert.equal(shown.components[0].grid.children.length, 6);
+assert.equal(shown.components[0].grid.children[0].card.children[1].text.fontSize, 18);
+assert.equal(shown.components[0].grid.children[3].card.children.find(node => node.progress).progress.progress, 1);
+assert.equal(JSON.parse(registered.show_cards(JSON.stringify({cards: [
+  {title: '状态', headline: '正常'}
+]}))).count, 1);
+assert.equal(shown.components[0].grid.columns, 1);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);

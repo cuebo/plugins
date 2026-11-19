@@ -42,52 +42,55 @@ function renderCard(card, index) {
     return {id:id+"-"+suffix,text:content};
   }
   function icon(suffix, symbol, tile) {
-    return {id:id+"-"+suffix,icon:{appearance:{accent:accent,iconSource:{systemName:symbol},variant:tile?"PLUGIN_COMPONENT_VARIANT_TILE":""}}};
+    return {id:id+"-"+suffix,icon:{appearance:{accent:accent,iconSource:{systemName:symbol},size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:tile?"PLUGIN_COMPONENT_VARIANT_TILE":""}}};
   }
   function line(suffix, item) {
     var children = [];
     if (item.icon) children.push(icon(suffix+"-icon",item.icon,false));
-    children.push(label(suffix+"-text",item.text,14,"PLUGIN_FONT_WEIGHT_REGULAR",true));
-    return {id:id+"-"+suffix,stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:children}};
+    children.push(label(suffix+"-text",item.text,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    return {id:id+"-"+suffix,stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:5,children:children}};
   }
-  var headerText = [label("title",card.title,17,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
-  if (card.subtitle) headerText.push(label("subtitle",card.subtitle,13,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  var headerText = [label("title",card.title,14,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
+  if (card.subtitle) headerText.push(label("subtitle",card.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
   var header = [];
   if (card.icon) header.push(icon("header-icon",card.icon,true));
-  header.push({id:id+"-header-copy",stack:{spacing:3,children:headerText}});
-  var body = [{id:id+"-header",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:12,children:header}}];
-  if (card.headline) body.push(label("headline",card.headline,22,"PLUGIN_FONT_WEIGHT_BOLD",false));
-  if (card.detail) body.push(label("detail",card.detail,14,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  header.push({id:id+"-header-copy",stack:{spacing:2,children:headerText}});
+  var body = [{id:id+"-header",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:header}}];
+  if (card.headline) body.push(label("headline",card.headline,18,"PLUGIN_FONT_WEIGHT_BOLD",false));
+  if (card.detail) body.push(label("detail",card.detail,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
   (card.facts || []).forEach(function(item,i) { body.push(line("fact-"+i,item)); });
   if (card.resource) {
-    var resourceCopy = [label("resource-title",card.resource.title,15,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
-    if (card.resource.subtitle) resourceCopy.push(label("resource-subtitle",card.resource.subtitle,13,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    var resourceCopy = [label("resource-title",card.resource.title,11,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
+    if (card.resource.subtitle) resourceCopy.push(label("resource-subtitle",card.resource.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
     var resourceChildren = [];
     if (card.resource.icon) resourceChildren.push(icon("resource-icon",card.resource.icon,true));
-    resourceChildren.push({id:id+"-resource-copy",stack:{spacing:3,children:resourceCopy}});
-    var resource = {children:[{id:id+"-resource-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:12,children:resourceChildren}}],appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"}};
+    resourceChildren.push({id:id+"-resource-copy",stack:{spacing:2,children:resourceCopy}});
+    var resource = {children:[{id:id+"-resource-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:6,children:resourceChildren}}],appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:7};
     if (card.resource.url) resource.onTap = {openURL:card.resource.url};
     body.push({id:id+"-resource",card:resource});
   }
   if (card.points && card.points.length >= 2) {
-    body.push({id:id+"-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:86,points:card.points,appearance:appearance,options:{hideAxes:true}}});
+    body.push({id:id+"-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:58,points:card.points,appearance:appearance,options:{hideAxes:true}}});
   }
   if (card.steps && card.steps.length >= 2) {
     var current = Math.max(0,Math.min(card.steps.length-1,card.currentStep || 0));
-    body.push({id:id+"-progress",progress:{title:card.steps[current].title,progress:current/(card.steps.length-1),appearance:appearance}});
-    body.push({id:id+"-steps",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.steps.map(function(step,i) {
-      return label("step-"+i,step.title,11,"PLUGIN_FONT_WEIGHT_REGULAR",i>current);
+    body.push({id:id+"-progress",progress:{progress:current/(card.steps.length-1),appearance:appearance}});
+    body.push({id:id+"-steps",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:3,children:card.steps.map(function(step,i) {
+      return label("step-"+i,step.title,10,"PLUGIN_FONT_WEIGHT_REGULAR",i>current);
     })}});
   }
   if (card.footer && card.footer.length) {
-    body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.footer.map(function(item,i) { return line("footer-"+i,item); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:8}});
+    var footerLength = card.footer.reduce(function(total,item) { return total + item.text.length; },0);
+    var footerAxis = card.footer.length <= 2 && footerLength <= 11 ? "PLUGIN_STACK_AXIS_HORIZONTAL" : "PLUGIN_STACK_AXIS_VERTICAL";
+    body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:card.footer.map(function(item,i) { return line("footer-"+i,item); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
   }
   if (card.actions && card.actions.length) {
-    body.push({id:id+"-actions",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.actions.map(function(action,i) {
-      return {id:id+"-action-"+i,button:{title:action.title,appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_SMALL",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
+    body.push({id:id+"-actions-divider",divider:{}});
+    body.push({id:id+"-actions",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:4,children:card.actions.map(function(action,i) {
+      return {id:id+"-action-"+i,button:{title:action.title,appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:"PLUGIN_COMPONENT_VARIANT_PLAIN",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
     })}});
   }
-  return {id:id,card:{children:body,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:18,spacing:14}};
+  return {id:id,card:{children:body,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:11,spacing:8}};
 }
 
 function showCards(raw) {
@@ -134,7 +137,8 @@ function showCards(raw) {
     return renderCard(card,index);
   });
   var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
-  var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:"信息卡片",components:components})));
+  var layout = {id:"basic-card-grid",grid:{columns:components.length === 1 ? 1 : 2,spacing:10,children:components}};
+  var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:"信息卡片",components:[layout]})));
   return JSON.stringify({shown:response.ok === true,count:components.length});
 }
 
@@ -145,6 +149,7 @@ function dashboard(ctx) {
     title:"基础卡片",
     components:[
       {id:"demo-label",text:{text:"以下为样式示例，数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
+      {id:"demo-grid",grid:{columns:2,spacing:10,children:[
       renderCard({title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
         headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]},0),
       renderCard({title:"文件详情",subtitle:"文档 · 12.4 MB",icon:"folder",accent:"blue",
@@ -154,9 +159,10 @@ function dashboard(ctx) {
       renderCard({title:"订单进度",subtitle:"编号 · DP784392",icon:"shippingbox",accent:"orange",
         headline:"运输中",detail:"预计周五送达",steps:[{title:"已发货"},{title:"运输中"},{title:"派送中"}],currentStep:1},3),
       renderCard({title:"环境概览",subtitle:"北京市",icon:"cloud.sun",accent:"blue",
-        headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风 3 级"},{icon:"humidity",text:"湿度 45%"}]},4),
+        headline:"12°C",detail:"多云 · 体感 10°C",footer:[{icon:"wind",text:"东北风3级"},{icon:"humidity",text:"湿度45%"}]},4),
       renderCard({title:"设备状态",subtitle:"客厅 · 在线",icon:"hifispeaker",accent:"purple",
-        headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]},5),
+        headline:"运行中",detail:"已运行 3 小时 24 分钟",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"自动"}]},5)
+      ]}},
       {id:"catalog-link",button:{title:"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
         onTap:{navigate:{surface:"detail",route:"catalog"}}}}
     ]
