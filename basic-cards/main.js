@@ -49,6 +49,62 @@ function compactText(value, maxUnits, summary) {
   return result.replace(/\s+$/, "") + "…";
 }
 
+// The sheet reads the original fields. Preview truncation never discards details.
+function renderDetail(card, cardId, accent) {
+  var id = cardId + "-detail";
+  var appearance = {accent:accent};
+  function label(suffix, value, size, weight, muted) {
+    var content = {text:value,fontSize:size,weight:weight};
+    if (muted) content.style = "PLUGIN_TEXT_STYLE_SUBTITLE";
+    return {id:id+"-"+suffix,text:content};
+  }
+  function icon(suffix, symbol, tile) {
+    return {id:id+"-"+suffix,icon:{appearance:{accent:accent,iconSource:{systemName:symbol},size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:tile?"PLUGIN_COMPONENT_VARIANT_TILE":""}}};
+  }
+  function line(suffix, item) {
+    var children = [];
+    if (item.icon) children.push(icon(suffix+"-icon",item.icon,false));
+    children.push(label(suffix+"-text",item.text,14,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    return {id:id+"-"+suffix,stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:children}};
+  }
+  var body = [];
+  if (card.subtitle) body.push(label("subtitle",card.subtitle,13,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  if (card.headline) body.push(label("headline",card.headline,22,"PLUGIN_FONT_WEIGHT_BOLD",false));
+  if (card.detail) body.push(label("description",card.detail,14,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  (card.facts || []).forEach(function(item,i) { body.push(line("fact-"+i,item)); });
+  if (card.resource) {
+    var copy = [label("resource-title",card.resource.title,15,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
+    if (card.resource.subtitle) copy.push(label("resource-subtitle",card.resource.subtitle,13,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    var children = [];
+    if (card.resource.icon) children.push(icon("resource-icon",card.resource.icon,true));
+    children.push({id:id+"-resource-copy",stack:{spacing:4,children:copy}});
+    var resource = {children:[{id:id+"-resource-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:children}}],appearance:{accent:accent,variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:12};
+    if (card.resource.url) resource.onTap = {openURL:card.resource.url};
+    body.push({id:id+"-resource",card:resource});
+  }
+  if (card.points && card.points.length >= 2) {
+    body.push({id:id+"-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:150,points:card.points,appearance:appearance,options:{hideAxes:true}}});
+  }
+  if (card.steps && card.steps.length >= 2) {
+    var current = Math.max(0,Math.min(card.steps.length-1,card.currentStep || 0));
+    body.push({id:id+"-progress",progress:{progress:current/(card.steps.length-1),appearance:appearance}});
+    card.steps.forEach(function(step,i) {
+      body.push(line("step-"+i,{text:step.title,icon:i<=current?"checkmark.circle.fill":"circle"}));
+    });
+  }
+  if (card.footer && card.footer.length) {
+    body.push({id:id+"-footer-divider",divider:{}});
+    card.footer.forEach(function(item,i) { body.push(line("footer-"+i,item)); });
+  }
+  if (card.actions && card.actions.length) {
+    body.push({id:id+"-actions-divider",divider:{}});
+    body.push({id:id+"-actions",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:card.actions.map(function(action,i) {
+      return {id:id+"-action-"+i,button:{title:action.title,appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_SMALL",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
+    })}});
+  }
+  return body;
+}
+
 // The plugin owns the card composition. The host only renders reusable Cuebo nodes.
 function renderCard(card, index, summary) {
   var id = "basic-card-" + index;
@@ -113,7 +169,8 @@ function renderCard(card, index, summary) {
     var footerAxis = visibleFooter.length <= 2 && footerLength <= 11 ? "PLUGIN_STACK_AXIS_HORIZONTAL" : "PLUGIN_STACK_AXIS_VERTICAL";
     body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:visibleFooter.map(function(item,i) { return line("footer-"+i,item,24); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
   }
-  return {id:id,card:{children:body,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},aspectRatio:1,padding:9,spacing:6}};
+  return {id:id,card:{children:body,detailTitle:card.title,detailChildren:renderDetail(card,id,accent),expandOnTap:true,
+    appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},aspectRatio:1,padding:9,spacing:6}};
 }
 
 function showCards(raw) {
@@ -175,7 +232,7 @@ function dashboard(ctx) {
   return {
     title:"基础卡片",
     components:[
-      {id:"demo-label",text:{text:"以下为样式示例，数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
+      {id:"demo-label",text:{text:"点击卡片查看完整信息 · 示例数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
       {id:"demo-grid",grid:{columns:2,spacing:10,children:[
       renderCard({title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
         headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]},0),

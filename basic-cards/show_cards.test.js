@@ -31,6 +31,7 @@ assert.equal(shown.components.length, 1);
 assert.equal(shown.components[0].grid.columns, 2);
 assert.equal(shown.components[0].grid.children.length, 6);
 assert.equal(shown.components[0].grid.children.every(node => node.card.aspectRatio === 1), true);
+assert.equal(shown.components[0].grid.children.every(node => node.card.expandOnTap === true), true);
 assert.equal(shown.components[0].grid.children[0].card.children[1].text.fontSize, 18);
 const withFooter = shown.components[0].grid.children[4].card.children;
 assert.equal(withFooter.at(-2).spacer.length, 0);
@@ -55,6 +56,12 @@ const cardNodes = shown.components[0].grid.children[0].card.children;
 assert.equal(cardNodes[0].stack.children[0].stack.children[0].text.text.endsWith('…'), true);
 assert.equal(cardNodes.filter(node => node.id.includes('-fact-')).length, 2);
 assert.equal(cardNodes.find(node => node.id.endsWith('-footer')).card.children[0].stack.children.length, 2);
+const detail = shown.components[0].grid.children[0].card;
+assert.equal(detail.detailTitle, '空间主要被什么占用');
+assert.equal(detail.detailChildren.filter(node => node.id.includes('-fact-')).length, 4);
+assert.equal(detail.detailChildren.filter(node => node.id.includes('-footer-') && node.stack).length, 3);
+assert.equal(detail.detailChildren.find(node => node.id.endsWith('-fact-0')).stack.children.at(-1).text.text,
+  '系统盘已用百分之三十五，剩余三十吉字节');
 JSON.parse(registered.show_cards(JSON.stringify({cards: [{
   title: '文件', resource: {title: '报告', url: 'https://example.com/report'},
   actions: [{title: '预览', url: 'https://example.com/report'}],
@@ -64,6 +71,8 @@ const combinedNodes = shown.components[0].grid.children[0].card.children;
 assert.equal(combinedNodes.at(-2).spacer.length, 0);
 assert.equal(combinedNodes.at(-1).id.endsWith('-footer'), true);
 assert.equal(combinedNodes.findIndex(node => node.id.endsWith('-actions')) < combinedNodes.findIndex(node => node.id.endsWith('-footer')), true);
+assert.equal(shown.components[0].grid.children[0].card.detailChildren.find(node => node.id.endsWith('-resource')).card.onTap.openURL,
+  'https://example.com/report');
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);
