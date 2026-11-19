@@ -31,37 +31,56 @@ function note(item, name) {
   return {text:requiredText(item.text, name, 100), icon:optionalSymbol(item.icon)};
 }
 
+// A two-column card has room for a short summary. Keep the source values in
+// the tool arguments; only the visible preview is shortened.
+function compactText(value, maxUnits, summary) {
+  var chars = Array.from(value);
+  var width = function(ch) { return ch.codePointAt(0) >= 0x2e80 ? 2 : 1; };
+  var total = chars.reduce(function(sum,ch) { return sum + width(ch); }, 0);
+  if (total <= maxUnits) return value;
+  if (summary) summary.shortened = true;
+  var result = "", used = 0;
+  for (var i = 0; i < chars.length; i++) {
+    var next = width(chars[i]);
+    if (used + next > maxUnits - 2) break;
+    result += chars[i];
+    used += next;
+  }
+  return result.replace(/\s+$/, "") + "…";
+}
+
 // The plugin owns the card composition. The host only renders reusable Cuebo nodes.
-function renderCard(card, index) {
+function renderCard(card, index, summary) {
   var id = "basic-card-" + index;
   var accent = "PLUGIN_ACCENT_" + (card.accent || "blue").toUpperCase();
   var appearance = {accent:accent};
-  function label(suffix, value, size, weight, muted) {
-    var content = {text:value,fontSize:size,weight:weight};
+  function label(suffix, value, size, weight, muted, maxUnits) {
+    var content = {text:compactText(value,maxUnits,summary),fontSize:size,weight:weight};
     if (muted) content.style = "PLUGIN_TEXT_STYLE_SUBTITLE";
     return {id:id+"-"+suffix,text:content};
   }
   function icon(suffix, symbol, tile) {
     return {id:id+"-"+suffix,icon:{appearance:{accent:accent,iconSource:{systemName:symbol},size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:tile?"PLUGIN_COMPONENT_VARIANT_TILE":""}}};
   }
-  function line(suffix, item) {
+  function line(suffix, item, maxUnits) {
     var children = [];
     if (item.icon) children.push(icon(suffix+"-icon",item.icon,false));
-    children.push(label(suffix+"-text",item.text,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    children.push(label(suffix+"-text",item.text,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,maxUnits));
     return {id:id+"-"+suffix,stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:5,children:children}};
   }
-  var headerText = [label("title",card.title,14,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
-  if (card.subtitle) headerText.push(label("subtitle",card.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+  var headerText = [label("title",card.title,14,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false,14)];
+  if (card.subtitle) headerText.push(label("subtitle",card.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,22));
   var header = [];
   if (card.icon) header.push(icon("header-icon",card.icon,true));
   header.push({id:id+"-header-copy",stack:{spacing:2,children:headerText}});
   var body = [{id:id+"-header",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:8,children:header}}];
-  if (card.headline) body.push(label("headline",card.headline,18,"PLUGIN_FONT_WEIGHT_BOLD",false));
-  if (card.detail) body.push(label("detail",card.detail,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
-  (card.facts || []).forEach(function(item,i) { body.push(line("fact-"+i,item)); });
+  if (card.headline) body.push(label("headline",card.headline,18,"PLUGIN_FONT_WEIGHT_BOLD",false,18));
+  if (card.detail) body.push(label("detail",card.detail,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,34));
+  if (card.facts && card.facts.length > 2 && summary) summary.shortened = true;
+  (card.facts || []).slice(0,2).forEach(function(item,i) { body.push(line("fact-"+i,item,34)); });
   if (card.resource) {
-    var resourceCopy = [label("resource-title",card.resource.title,11,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false)];
-    if (card.resource.subtitle) resourceCopy.push(label("resource-subtitle",card.resource.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true));
+    var resourceCopy = [label("resource-title",card.resource.title,11,"PLUGIN_FONT_WEIGHT_SEMIBOLD",false,22)];
+    if (card.resource.subtitle) resourceCopy.push(label("resource-subtitle",card.resource.subtitle,10,"PLUGIN_FONT_WEIGHT_REGULAR",true,20));
     var resourceChildren = [];
     if (card.resource.icon) resourceChildren.push(icon("resource-icon",card.resource.icon,true));
     resourceChildren.push({id:id+"-resource-copy",stack:{spacing:2,children:resourceCopy}});
@@ -76,18 +95,20 @@ function renderCard(card, index) {
     var current = Math.max(0,Math.min(card.steps.length-1,card.currentStep || 0));
     body.push({id:id+"-progress",progress:{progress:current/(card.steps.length-1),appearance:appearance}});
     body.push({id:id+"-steps",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:3,children:card.steps.map(function(step,i) {
-      return label("step-"+i,step.title,10,"PLUGIN_FONT_WEIGHT_REGULAR",i>current);
+      return label("step-"+i,step.title,10,"PLUGIN_FONT_WEIGHT_REGULAR",i>current,12);
     })}});
   }
   if (card.footer && card.footer.length) {
-    var footerLength = card.footer.reduce(function(total,item) { return total + item.text.length; },0);
-    var footerAxis = card.footer.length <= 2 && footerLength <= 11 ? "PLUGIN_STACK_AXIS_HORIZONTAL" : "PLUGIN_STACK_AXIS_VERTICAL";
-    body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:card.footer.map(function(item,i) { return line("footer-"+i,item); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
+    if (card.footer.length > 2 && summary) summary.shortened = true;
+    var visibleFooter = card.footer.slice(0,2);
+    var footerLength = visibleFooter.reduce(function(total,item) { return total + item.text.length; },0);
+    var footerAxis = visibleFooter.length <= 2 && footerLength <= 11 ? "PLUGIN_STACK_AXIS_HORIZONTAL" : "PLUGIN_STACK_AXIS_VERTICAL";
+    body.push({id:id+"-footer",card:{children:[{id:id+"-footer-row",stack:{axis:footerAxis,spacing:5,children:visibleFooter.map(function(item,i) { return line("footer-"+i,item,24); })}}],appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE"},padding:6}});
   }
   if (card.actions && card.actions.length) {
     body.push({id:id+"-actions-divider",divider:{}});
     body.push({id:id+"-actions",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:4,children:card.actions.map(function(action,i) {
-      return {id:id+"-action-"+i,button:{title:action.title,appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:"PLUGIN_COMPONENT_VARIANT_PLAIN",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
+      return {id:id+"-action-"+i,button:{title:compactText(action.title,12,summary),appearance:{accent:accent,size:"PLUGIN_COMPONENT_SIZE_COMPACT",variant:"PLUGIN_COMPONENT_VARIANT_PLAIN",iconSource:{systemName:action.icon || "arrow.up.right"}},onTap:{openURL:action.url}}};
     })}});
   }
   return {id:id,card:{children:body,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:11,spacing:8}};
@@ -96,6 +117,7 @@ function renderCard(card, index) {
 function showCards(raw) {
   var input = JSON.parse(raw || "{}");
   if (!Array.isArray(input.cards) || input.cards.length < 1 || input.cards.length > 6) throw new Error("卡片数量需为 1 至 6");
+  var shortenedCards = [];
   var components = input.cards.map(function(item, index) {
     if (!item || typeof item !== "object") throw new Error("卡片无效");
     var card = {
@@ -134,12 +156,15 @@ function showCards(raw) {
       card.currentStep = item.current_step;
     }
     if (!card.headline && !card.detail && !card.facts.length && !card.resource && !card.points && !card.steps && !card.footer.length) throw new Error("卡片内容不能为空");
-    return renderCard(card,index);
+    var summary = {shortened:false};
+    var rendered = renderCard(card,index,summary);
+    if (summary.shortened) shortenedCards.push(index + 1);
+    return rendered;
   });
   var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
   var layout = {id:"basic-card-grid",grid:{columns:components.length === 1 ? 1 : 2,spacing:10,children:components}};
   var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:"信息卡片",components:[layout]})));
-  return JSON.stringify({shown:response.ok === true,count:components.length});
+  return JSON.stringify({shown:response.ok === true,count:components.length,shortenedCards:shortenedCards});
 }
 
 registerTool("show_cards", showCards);

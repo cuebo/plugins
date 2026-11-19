@@ -2,8 +2,8 @@
   "id": "basic-cards",
   "name": "基础卡片",
   "description": "在对话中展示通用信息卡片，支持摘要、资源、趋势、步骤进度与状态。",
-  "pe": "基础卡片可用于把真实信息直观展示给用户。遇到会议安排、文件或网页、关键数值、趋势、进度、天气、设备状态等适合卡片的内容时，可调用 plugin_basic_cards_show_cards；按数据选择卡片字段，不要求固定场景或用户说出卡片名称。只传用户提供或工具查到的事实；缺少数据就省略对应字段，不编造图表点、步骤、链接或操作。用户明确只要文字时遵从。工具返回 shown:true 才表示已展示。",
-  "version": "1.6.0",
+  "pe": "基础卡片可用于把真实信息直观展示给用户。遇到会议安排、文件或网页、关键数值、趋势、进度、天气、设备状态等适合卡片的内容时，可调用 plugin_basic_cards_show_cards；按数据选择卡片字段，不要求固定场景或用户说出卡片名称。双列卡片只放短摘要：标题尽量不超过7个汉字，每张最多2条简短事实和2条底部信息。展示成功后默认只补一句结论或必要异常，不逐项复述卡片；若用户要求明细，再展开说明。只传用户提供或工具查到的事实；缺少数据就省略对应字段，不编造图表点、步骤、链接或操作。用户明确只要文字时遵从。工具返回 shown:true 才表示已展示；shortenedCards 非空表示对应序号的卡片省略了细节，仅在相关时补充。",
+  "version": "1.7.0",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "files": {
@@ -13,7 +13,7 @@
   "tools": [
     {
       "name": "show_cards",
-      "description": "用统一样式展示 1 至 6 张真实信息卡片。可表达安排、资源、指标趋势、进度、天气、设备状态等场景；只填有据可查的字段，链接仅用于真实网页。",
+      "description": "用双列短摘要展示 1 至 6 张真实信息卡片；正文默认只补一句结论或必要异常，用户要明细时再展开。可表达安排、资源、指标趋势、进度、天气、设备状态等场景；链接仅用于真实网页。",
       "parameters": {
         "cards": {
           "type": "array",
@@ -26,12 +26,12 @@
             "properties": {
               "title": {
                 "type": "string",
-                "description": "卡片抬头，例如会议安排、本周数据、设备状态",
+                "description": "简短抬头，建议不超过7个汉字，例如会议安排、本周数据",
                 "required": true
               },
               "subtitle": {
                 "type": "string",
-                "description": "抬头下的时间、对象或来源",
+                "description": "简短时间、对象或来源；过长会在卡片中截断",
                 "required": false
               },
               "icon": {
@@ -46,17 +46,17 @@
               },
               "headline": {
                 "type": "string",
-                "description": "主要信息、数值或状态",
+                "description": "一句简短的主要信息、数值或状态；完整说明放正文",
                 "required": false
               },
               "detail": {
                 "type": "string",
-                "description": "主要信息下的补充说明",
+                "description": "简短补充说明；过长会在卡片中截断",
                 "required": false
               },
               "facts": {
                 "type": "array",
-                "description": "地点、更新时刻等事实，最多 4 条",
+                "description": "地点、更新时刻等事实；卡片最多展示前2条，更多明细放正文",
                 "required": false,
                 "items": {
                   "type": "object",
@@ -65,7 +65,7 @@
                   "properties": {
                     "text": {
                       "type": "string",
-                      "description": "真实信息",
+                      "description": "一条简短真实信息，建议不超过17个汉字",
                       "required": true
                     },
                     "icon": {
@@ -149,7 +149,7 @@
               },
               "footer": {
                 "type": "array",
-                "description": "底部简短信息，最多 3 项",
+                "description": "底部简短信息；卡片最多展示前2项，更多明细放正文",
                 "required": false,
                 "items": {
                   "type": "object",
@@ -158,7 +158,7 @@
                   "properties": {
                     "text": {
                       "type": "string",
-                      "description": "真实信息",
+                      "description": "简短底部信息，建议不超过12个汉字",
                       "required": true
                     },
                     "icon": {
