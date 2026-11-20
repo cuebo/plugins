@@ -19,6 +19,7 @@ my-plugin/
   "id": "my-plugin",
   "name": "示例插件",
   "description": "向指定名字打招呼",
+  "iconURL": "https://example.com/plugin-icon.png",
   "pe": "需要向用户打招呼时调用 greet。",
   "version": "1.0.0",
   "files": { "main.js": "" },
@@ -42,6 +43,8 @@ registerTool("greet", function (argsJSON) {
 模型看到的工具名是 `plugin_my_plugin_greet`。`parameters` 支持 `string`、`number`、`boolean`、`integer`、`array` 和 `object`，字段名映射到 `{type, description, required}`；数组用 `items` 定义元素，对象用 `properties` 定义字段。工具的输入是 **JSON 字符串**，返回字符串；建议返回 JSON 字符串，方便模型判断成功和失败。每个 `tools[].name` 都必须对应同名 `registerTool`。
 
 `id` 为 2–64 位小写字母、数字、连字符，且以字母开头；工具名可再包含下划线。`description` 用于列表，`pe` 是挂载后注入模型的使用说明。修改插件要递增 `version`。脚本可拆在 `scripts/*.js`，辅助脚本按路径排序先加载，`main.js` 最后加载。
+
+`iconURL` 可选，填写公开的 HTTPS PNG/JPEG 图片地址。App 会在插件库、商店和 Agent 插件列表加载，失败时显示默认图标；这项显示请求不属于插件脚本的 `networkHosts` 授权。仓库插件请在 `index.json` 中同步同一个地址。
 
 ## 能获取哪些数据
 

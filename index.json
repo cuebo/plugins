@@ -5,7 +5,8 @@
       "id": "basic-cards",
       "name": "基础卡片",
       "description": "在对话中展示通用信息卡片，支持摘要、资源、趋势、步骤进度与状态。",
-      "version": "1.13.1",
+      "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/basic-cards.png",
+      "version": "1.13.2",
       "path": "basic-cards",
       "toolCount": 1,
       "networkHosts": []
@@ -14,7 +15,8 @@
       "id": "github",
       "name": "GitHub",
       "description": "查看个人概览、贡献日历和仓库概览卡片，以及管理 Issue 与 Pull Request。",
-      "version": "1.4.2",
+      "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/github.png",
+      "version": "1.4.3",
       "path": "github",
       "toolCount": 12,
       "networkHosts": [
@@ -25,7 +27,8 @@
       "id": "server-status",
       "name": "服务器管理",
       "description": "展示服务器或 NAS 状态，并在 Agent 选定的运行环境中查询 Docker 容器卡片",
-      "version": "1.2.0",
+      "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/server-status.png",
+      "version": "1.2.1",
       "path": "server-status",
       "toolCount": 3,
       "networkHosts": []
@@ -34,7 +37,8 @@
       "id": "telegram-groups",
       "name": "Telegram 群消息",
       "description": "读取群消息、选群、回复和投票，并在确认后管理群消息与成员",
-      "version": "1.5.0",
+      "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/telegram-groups.png",
+      "version": "1.5.1",
       "path": "telegram-groups",
       "toolCount": 17,
       "networkHosts": [

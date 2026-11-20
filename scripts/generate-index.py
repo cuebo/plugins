@@ -18,6 +18,7 @@ def build():
             "id": plugin["id"],
             "name": plugin["name"],
             "description": plugin.get("description", ""),
+            "iconURL": plugin.get("iconURL"),
             "version": plugin["version"],
             "path": manifest.parent.name,
             "toolCount": len(plugin["tools"]),

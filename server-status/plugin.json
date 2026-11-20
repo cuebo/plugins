@@ -2,8 +2,9 @@
   "id": "server-status",
   "name": "服务器管理",
   "description": "展示服务器或 NAS 状态，并在 Agent 选定的运行环境中查询 Docker 容器卡片",
+  "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/server-status.png",
   "pe": "涉及服务器或 NAS 的运行状态、负载、资源占用或连接情况时，尽量用卡片展示；先用该 Agent 已绑定的终端/SSH 环境执行只读查询，再调用 plugin_server_status_show_status。查询成功时传 online:true 和本轮实测指标；连接失败时传 online:false，只显示离线状态。system 只填简短系统名称，完整内核信息可放回答正文。CPU 使用率须由两次 /proc/stat 采样计算，网络速率须由两次网卡字节计数采样计算；不要把 load average 当作 CPU 百分比，不要把累计字节数当作速率。内存使用率建议按 MemTotal 和 MemAvailable 计算，磁盘按目标挂载点 df 查询。温度仅在系统提供传感器读数时填写。未取得的字段不要推测或传入。卡片是一次查询的快照，回答中可补充采样时间和异常指标。 用户询问 Docker 容器列表或单个容器状态、资源占用、端口和卷时，使用本插件的 list_containers 或 show_container；这两个工具会在用户为 Agent 选定的默认运行环境直接执行只读 Docker 命令，模型不要填写环境 ID。容器 CPU、内存和网络数据来自本轮 docker stats，网络为累计 I/O，不是实时速率；查询失败时说明错误，不推测数据。",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "uiProtocol": "cuebo-v1",
   "capabilities": [
     "ish_shell",
