@@ -4,7 +4,7 @@
   "description": "查看域名、流量、DNS、Workers 与 Pages，并由 Agent 安全管理常用操作。",
   "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/cloudflare.png",
   "pe": "Cloudflare 插件已挂载。涉及用户 Cloudflare 域名、流量、DNS 或 Workers/Pages 部署时，直接用本插件查询真实数据；适合概览时优先调用 zone_card 展示卡片，用户明确只要文字时遵从。目标不明确时先列出 zones 或 pages_projects，不猜 Zone、记录或部署 ID。写操作只在用户要求时调用，App 会确认；DNS 修改和删除先用 dns_records 确认目标记录，缓存只清指定 URL，Pages 仅重试失败部署。工具显示 shown:true 才表示卡片已展示。权限不足或数据缺失时明确说明，不编造指标或部署结果，不输出令牌。",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "capabilities": ["generative_ui"],

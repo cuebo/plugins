@@ -16,7 +16,7 @@
       "name": "Cloudflare",
       "description": "查看域名、流量、DNS、Workers 与 Pages，并由 Agent 安全管理常用操作。",
       "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/cloudflare.png",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "cloudflare",
       "toolCount": 11,
       "networkHosts": [

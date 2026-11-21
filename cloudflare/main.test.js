@@ -168,4 +168,11 @@ token = "";
 const requestCount = requests.length;
 assert.strictEqual(invoke("zones").ok, false);
 assert.strictEqual(requests.length, requestCount);
+const setupPage = context.dashboard({});
+assert.strictEqual(setupPage.components.find(c => c.id === "cf-create-token").button.onTap.openURL,
+  "https://dash.cloudflare.com/profile/api-tokens");
+assert.strictEqual(requests.length, requestCount);
+language = "en";
+assert.strictEqual(context.dashboard({}).components.find(c => c.id === "cf-create-token").button.title,
+  "Create a Cloudflare token");
 console.log("Cloudflare plugin tests passed");

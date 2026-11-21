@@ -1,6 +1,6 @@
 # Cloudflare 插件
 
-将本插件安装到 Agent 后，在插件配置中填写 **Cloudflare API Token**。首次访问 `api.cloudflare.com` 时，App 会请求网络授权。插件首页可浏览域名与近 24 小时请求趋势，查看 DNS、Workers 和 Pages；Agent 也可调用 `zone_card` 在对话中显示可展开的域名卡片。数据来自 Cloudflare API，不使用示例值。
+将本插件安装到 Agent 后，可在插件首页点“前往 Cloudflare 创建 Token”，登录 Cloudflare 后创建 API Token，再回到 Agent 的插件配置中填写。这个入口使用插件协议的通用网页跳转能力；令牌的权限选择、创建和复制由用户在 Cloudflare 页面完成。首次访问 `api.cloudflare.com` 时，App 会请求网络授权。插件首页可浏览域名与近 24 小时请求趋势，查看 DNS、Workers 和 Pages；Agent 也可调用 `zone_card` 在对话中显示可展开的域名卡片。数据来自 Cloudflare API，不使用示例值。
 
 建议创建限制到需要管理的 Zone 和账户的 API Token。按实际使用的功能授予权限：
 

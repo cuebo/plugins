@@ -1,4 +1,5 @@
 var CF_API = "https://api.cloudflare.com/client/v4";
+var CF_TOKEN_URL = "https://dash.cloudflare.com/profile/api-tokens";
 var CF_TYPES = ["A", "AAAA", "CNAME", "TXT", "MX"];
 
 function cfText(zh, en) {
@@ -439,7 +440,13 @@ function cfPageActions(route, page, hasMore) {
 }
 
 function dashboard(ctx) {
-  if (!cfConfig().token) return {title:"Cloudflare",components:[cfSectionError("cf-config", cfError(cfText("请在 Agent 的插件配置中填写 API Token", "Set an API Token in the Agent's plugin settings")))]};
+  if (!cfConfig().token) return {title:"Cloudflare",components:[
+    cfSectionError("cf-config", cfError(cfText("请在 Agent 的插件配置中填写 API Token", "Set an API Token in the Agent's plugin settings"))),
+    cfLabel("cf-token-guide", cfText("按所需功能选择最小权限，创建后将 Token 粘贴到插件配置。", "Choose only the permissions you need, then paste the new token into the plugin settings."), 13, true),
+    {id:"cf-create-token",button:{title:cfText("前往 Cloudflare 创建 Token", "Create a Cloudflare token"),
+      appearance:{accent:"PLUGIN_ACCENT_ORANGE",size:"PLUGIN_COMPONENT_SIZE_COMPACT"},
+      onTap:{openURL:CF_TOKEN_URL}}}
+  ]};
   var components = [];
   var zones = cfListZones(1);
   var selectedID = cfSelectedZone();
