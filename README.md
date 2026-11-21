@@ -9,6 +9,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |
 | [`basic-cards/`](basic-cards/) | 通用信息卡片；App 随附初始版本，插件商店可更新，内置版本可用于重置 | 插件商店 |
+| [`cloudflare/`](cloudflare/) | 查看域名、流量、DNS、Workers 与 Pages，管理受控操作 | `https://github.com/cuebo/plugins/tree/main/cloudflare` |
 | [`github/`](github/) | 展示 GitHub 个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`server-status/`](server-status/) | 展示服务器或 NAS 状态，并查询 Docker 容器卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |

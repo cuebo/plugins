@@ -12,6 +12,18 @@
       "networkHosts": []
     },
     {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "description": "查看域名、流量、DNS、Workers 与 Pages，并由 Agent 安全管理常用操作。",
+      "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/cloudflare.png",
+      "version": "1.0.0",
+      "path": "cloudflare",
+      "toolCount": 11,
+      "networkHosts": [
+        "api.cloudflare.com"
+      ]
+    },
+    {
       "id": "github",
       "name": "GitHub",
       "description": "查看个人概览、贡献日历和仓库概览卡片，以及管理 Issue 与 Pull Request。",
