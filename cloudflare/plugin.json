@@ -3,31 +3,28 @@
   "name": "Cloudflare",
   "description": "查看域名、流量、DNS、Workers 与 Pages，并由 Agent 安全管理常用操作。",
   "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/cloudflare.png",
-  "pe": "Cloudflare 插件已挂载。涉及用户 Cloudflare 域名、流量、DNS 或 Workers/Pages 部署时，直接用本插件查询真实数据；适合概览时优先调用 zone_card 展示卡片，用户明确只要文字时遵从。目标不明确时先列出 zones 或 pages_projects，不猜 Zone、记录或部署 ID。写操作只在用户要求时调用，App 会确认；DNS 修改和删除先用 dns_records 确认目标记录，缓存只清指定 URL，Pages 仅重试失败部署。工具显示 shown:true 才表示卡片已展示。权限不足或数据缺失时明确说明，不编造指标或部署结果，不输出令牌。",
-  "version": "1.0.1",
-  "ui": true,
-  "uiProtocol": "cuebo-v1",
-  "capabilities": ["generative_ui"],
+  "pe": "Cloudflare 插件已挂载。涉及用户 Cloudflare 域名、流量、DNS 或 Workers/Pages 部署时，直接用本插件查询真实数据，并用文字说明结果。查询域名概览可用 zone_overview；目标不明确时先列出 zones 或 pages_projects，不猜 Zone、记录或部署 ID。写操作只在用户要求时调用，App 会确认；DNS 修改和删除先用 dns_records 确认目标记录，缓存只清指定 URL，Pages 仅重试失败部署。权限不足或数据缺失时明确说明，不编造指标或部署结果，不输出令牌。",
+  "version": "1.0.2",
   "files": {"main.js": "main.js"},
   "networkHosts": ["api.cloudflare.com"],
   "config": [
     {"id": "token", "title": "Cloudflare API Token", "type": "secret", "required": true},
-    {"id": "account_id", "title": "账户 ID（无可列出域名时填写）", "type": "text"}
+    {"id": "account_id", "title": "账户 ID（查询 Workers/Pages 时填写）", "type": "text"}
   ],
   "tools": [
     {"name": "zones", "description": "按页列出当前令牌可访问的 Cloudflare 域名及其账户和状态。", "parameters": {
       "page": {"type": "number", "description": "页码，默认 1。"}
     }},
-    {"name": "zone_card", "description": "查询指定域名的状态和近 24 小时请求量、传输量，并展示可展开的对话卡片。", "parameters": {
-      "zone_id": {"type": "string", "description": "可选 Zone ID；省略时使用插件首页选中的域名。"}
+    {"name": "zone_overview", "description": "查询指定域名的状态和近 24 小时请求量、传输量与小时趋势，返回纯数据。", "parameters": {
+      "zone_id": {"type": "string", "description": "先用 zones 查询得到的 Zone ID。", "required": true}
     }},
     {"name": "dns_records", "description": "按页查询指定域名的 DNS 记录，可按完整记录名过滤。", "parameters": {
-      "zone_id": {"type": "string", "description": "Zone ID；省略时使用已选域名。"},
+      "zone_id": {"type": "string", "description": "先用 zones 查询得到的 Zone ID。", "required": true},
       "name": {"type": "string", "description": "可选完整记录名。"},
       "page": {"type": "number", "description": "页码，默认 1。"}
     }},
     {"name": "workers", "description": "列出账户中的 Worker 脚本及更新时间。", "parameters": {
-      "account_id": {"type": "string", "description": "可选账户 ID；省略时取已选域名所属账户或插件配置。"}
+      "account_id": {"type": "string", "description": "可选账户 ID；省略时使用插件配置。"}
     }},
     {"name": "pages_projects", "description": "按页列出账户中的 Pages 项目及最近部署状态。", "parameters": {
       "account_id": {"type": "string", "description": "可选账户 ID。"},
@@ -39,7 +36,7 @@
       "page": {"type": "number", "description": "页码，默认 1。"}
     }},
     {"name": "create_dns_record", "description": "在指定域名新增 A、AAAA、CNAME、TXT 或 MX 记录；执行前需确认。", "requiresApproval": true, "parameters": {
-      "zone_id": {"type": "string", "description": "Zone ID；省略时使用已选域名。"},
+      "zone_id": {"type": "string", "description": "先用 zones 查询得到的 Zone ID。", "required": true},
       "type": {"type": "string", "description": "A、AAAA、CNAME、TXT 或 MX。", "required": true},
       "name": {"type": "string", "description": "记录名：@、单级相对名称或属于 Zone 的完整域名。", "required": true},
       "content": {"type": "string", "description": "记录值。", "required": true},
@@ -48,7 +45,7 @@
       "priority": {"type": "number", "description": "MX 优先级，必填。"}
     }},
     {"name": "update_dns_record", "description": "按记录 ID 修改已存在的 A、AAAA、CNAME、TXT 或 MX 记录；执行前需确认。", "requiresApproval": true, "parameters": {
-      "zone_id": {"type": "string", "description": "Zone ID；省略时使用已选域名。"},
+      "zone_id": {"type": "string", "description": "先用 zones 查询得到的 Zone ID。", "required": true},
       "record_id": {"type": "string", "description": "先查询得到的记录 ID。", "required": true},
       "name": {"type": "string", "description": "可选的新记录名。"},
       "content": {"type": "string", "description": "可选的新记录值。"},
@@ -57,11 +54,11 @@
       "priority": {"type": "number", "description": "可选，仅 MX 可用。"}
     }},
     {"name": "delete_dns_record", "description": "按记录 ID 删除已核对的 DNS 记录；执行前需确认。", "requiresApproval": true, "parameters": {
-      "zone_id": {"type": "string", "description": "Zone ID；省略时使用已选域名。"},
+      "zone_id": {"type": "string", "description": "先用 zones 查询得到的 Zone ID。", "required": true},
       "record_id": {"type": "string", "description": "先查询得到的记录 ID。", "required": true}
     }},
     {"name": "purge_cache_urls", "description": "只清理指定 Zone 下的 1 至 10 个完整 URL 的缓存；执行前需确认。", "requiresApproval": true, "parameters": {
-      "zone_id": {"type": "string", "description": "Zone ID；省略时使用已选域名。"},
+      "zone_id": {"type": "string", "description": "先用 zones 查询得到的 Zone ID。", "required": true},
       "urls": {"type": "array", "description": "1 至 10 个完整 HTTP/HTTPS URL。", "required": true, "items": {"type": "string"}}
     }},
     {"name": "retry_pages_deployment", "description": "只重试当前状态为失败的 Pages 部署；执行前需确认。", "requiresApproval": true, "parameters": {
@@ -74,10 +71,10 @@
     "en": {
       "name": "Cloudflare",
       "description": "Explore zones, traffic, DNS, Workers and Pages, with controlled Agent actions.",
-      "pe": "Use this plugin for real Cloudflare zone, traffic, DNS, Worker and Pages data. Prefer zone_card for a useful overview unless the user requests text only. Discover target IDs before modifying anything. Only use write tools when the user requests a change; the App confirms each operation. Report permission errors and unavailable data plainly. Never expose the API token.",
+      "pe": "Use this plugin for real Cloudflare zone, traffic, DNS, Worker and Pages data, and explain results in text. Use zone_overview for a zone summary. Discover target IDs before modifying anything. Only use write tools when the user requests a change; the App confirms each operation. Report permission errors and unavailable data plainly. Never expose the API token.",
       "toolDescriptions": {
         "zones": "List zones, their status, and account details.",
-        "zone_card": "Show a zone card with status and 24-hour traffic.",
+        "zone_overview": "Return zone status, 24-hour traffic and hourly trends as data.",
         "dns_records": "List DNS records for a zone, optionally filtering by name.",
         "workers": "List Worker scripts in an account.",
         "pages_projects": "List Pages projects and recent deployment status.",

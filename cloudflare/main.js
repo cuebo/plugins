@@ -1,5 +1,4 @@
 var CF_API = "https://api.cloudflare.com/client/v4";
-var CF_TOKEN_URL = "https://dash.cloudflare.com/profile/api-tokens";
 var CF_TYPES = ["A", "AAAA", "CNAME", "TXT", "MX"];
 
 function cfText(zh, en) {
@@ -96,30 +95,16 @@ function cfProject(value) {
   return value;
 }
 
-function cfSelectedZone() {
-  var saved;
-  try { saved = JSON.parse(host.storage("get", "selected_zone", "")); } catch (_) { saved = null; }
-  return typeof saved === "string" && /^[a-f0-9]{32}$/i.test(saved) ? saved : "";
-}
-
 function cfZoneID(value) {
-  return cfID(value || cfSelectedZone(), cfText("Zone ID", "Zone ID"));
+  return cfID(value, cfText("Zone ID", "Zone ID"));
 }
 
 function cfZone(value) {
   return cfRequest("GET", "/zones/" + cfZoneID(value));
 }
 
-function cfAccountID(value, zone) {
+function cfAccountID(value) {
   if (value) return cfID(value, cfText("账户 ID", "Account ID"));
-  if (zone && zone.account && zone.account.id) return cfID(zone.account.id, cfText("账户 ID", "Account ID"));
-  var selected = cfSelectedZone();
-  if (selected) {
-    var fetched = cfZone(selected);
-    if (fetched.ok && fetched.data && fetched.data.account && fetched.data.account.id) {
-      return cfID(fetched.data.account.id, cfText("账户 ID", "Account ID"));
-    }
-  }
   var configured = cfConfig().account_id;
   return cfID(configured, cfText("账户 ID", "Account ID"));
 }
@@ -221,16 +206,14 @@ registerTool("zones", cfTool(function(a) {
   })};
 }));
 
-registerTool("zone_card", cfTool(function(a) {
+registerTool("zone_overview", cfTool(function(a) {
   var result = cfZone(a.zone_id);
   if (!result.ok) return result;
   var traffic = cfGraphQL(result.data.id);
-  var card = cfZoneCard(result.data, traffic);
-  var shown = JSON.parse(host.ui("show", JSON.stringify({id:"cfzone" + Date.now().toString(36) + Math.floor(Math.random() * 100000).toString(36),
-    title:result.data.name, components:[card]})));
-  return {ok:true, shown:shown.ok === true, zone:{id:result.data.id,name:result.data.name,status:result.data.status,
+  return {ok:true, zone:{id:result.data.id,name:result.data.name,status:result.data.status,
     account_id:result.data.account && result.data.account.id}, traffic:traffic.ok ?
-    {requests:traffic.requests, edge_response_bytes:traffic.bytes, from:traffic.start, to:traffic.end} :
+    {requests:traffic.requests, edge_response_bytes:traffic.bytes, hourly_requests:traffic.points,
+      from:traffic.start, to:traffic.end} :
     {available:false,error:traffic.error}};
 }));
 
@@ -363,194 +346,3 @@ function cfCompactDeployment(deployment) {
     created_on:deployment.created_on, modified_on:deployment.modified_on,
     url:deployment.url, is_skipped:deployment.is_skipped === true};
 }
-
-function cfFormatBytes(bytes) {
-  if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + " GB";
-  if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + " MB";
-  if (bytes >= 1024) return (bytes / 1024).toFixed(1) + " KB";
-  return Math.round(bytes) + " B";
-}
-
-function cfShort(value, limit) {
-  var chars = Array.from(String(value == null ? "" : value));
-  return chars.length > limit ? chars.slice(0, limit - 1).join("") + "…" : chars.join("");
-}
-
-function cfLabel(id, text, size, muted) {
-  return {id:id,text:{text:String(text),fontSize:size || 13,
-    weight:size >= 18 ? "PLUGIN_FONT_WEIGHT_SEMIBOLD" : "PLUGIN_FONT_WEIGHT_REGULAR",
-    style:muted ? "PLUGIN_TEXT_STYLE_SUBTITLE" : "PLUGIN_TEXT_STYLE_BODY"}};
-}
-
-function cfZoneCard(zone, traffic) {
-  var name = zone.name || cfText("域名", "Zone");
-  var main = [cfLabel("cf-title", cfShort(name, 22), 14, false),
-    cfLabel("cf-state", cfText("状态 · ", "Status · ") + (zone.status || "—"), 11, true)];
-  var detail = [cfLabel("cf-detail-name", name, 20, false),
-    cfLabel("cf-detail-status", cfText("域名状态：", "Zone status: ") + (zone.status || "—"), 14, true)];
-  if (traffic.ok) {
-    main.push(cfLabel("cf-requests", cfShort(traffic.requests.toLocaleString(), 15), 23, false));
-    main.push(cfLabel("cf-transfer", cfText("传输 ", "Transfer ") + cfFormatBytes(traffic.bytes), 11, true));
-    detail.push(cfLabel("cf-detail-requests", cfText("近 24 小时请求：", "Requests in 24 h: ") + traffic.requests.toLocaleString(), 15, false));
-    detail.push(cfLabel("cf-detail-transfer", cfText("边缘响应传输：", "Edge response transfer: ") + cfFormatBytes(traffic.bytes), 14, true));
-    if (traffic.points.length >= 2) {
-      main.push({id:"cf-chart",chart:{kind:"PLUGIN_CHART_KIND_AREA",height:56,points:traffic.points,
-        appearance:{accent:"PLUGIN_ACCENT_ORANGE"},options:{hideAxes:true}}});
-      detail.push({id:"cf-detail-chart",chart:{title:cfText("近 24 小时请求趋势", "24-hour request trend"),
-        kind:"PLUGIN_CHART_KIND_AREA",height:160,points:traffic.points,appearance:{accent:"PLUGIN_ACCENT_ORANGE"}}});
-    }
-  } else {
-    main.push(cfLabel("cf-traffic-unavailable", cfText("流量数据暂不可用", "Traffic unavailable"), 12, true));
-    detail.push(cfLabel("cf-detail-error", traffic.error || "", 13, true));
-  }
-  if (zone.account && zone.account.name) detail.push(cfLabel("cf-detail-account", cfText("账户：", "Account: ") + zone.account.name, 13, true));
-  return {id:"cf-zone-card",card:{children:main,bottomChildren:[cfLabel("cf-footer", cfText("点击查看详情", "Tap for details"), 10, true)],
-    detailTitle:name,detailChildren:detail,expandOnTap:true,aspectRatio:1,padding:8,spacing:4,
-    appearance:{accent:"PLUGIN_ACCENT_ORANGE",variant:"PLUGIN_COMPONENT_VARIANT_SURFACE"}}};
-}
-
-function cfSectionError(id, result) {
-  return {id:id,stateBlock:{kind:"PLUGIN_STATE_KIND_ERROR",title:cfText("暂不可用", "Unavailable"),message:result.error || ""}};
-}
-
-function cfListNode(id, items) {
-  return {id:id,list:{items:items}};
-}
-
-function cfNavigate(id, title, route) {
-  return {id:id,button:{title:title,appearance:{accent:"PLUGIN_ACCENT_ORANGE",size:"PLUGIN_COMPONENT_SIZE_COMPACT"},
-    onTap:{navigate:{surface:"detail",route:route}}}};
-}
-
-function cfSaved(key, fallback) {
-  try { var value = JSON.parse(host.storage("get", key, "")); return value == null ? fallback : value; }
-  catch (_) { return fallback; }
-}
-
-function cfStore(key, value) {
-  var result = JSON.parse(host.storage("put", key, JSON.stringify(value)));
-  if (!result.saved) throw new Error(cfText("无法保存选择", "Could not save selection"));
-}
-
-function cfPageActions(route, page, hasMore) {
-  var actions = [{title:cfText("刷新", "Refresh"),onTap:{plugin:{actionId:"refresh"}}}];
-  if (page > 1) actions.push({title:cfText("上一页", "Previous"),onTap:{plugin:{actionId:"change_page",params:{route:route,page:String(page - 1)}}}});
-  if (hasMore) actions.push({title:cfText("下一页", "Next"),onTap:{plugin:{actionId:"change_page",params:{route:route,page:String(page + 1)}}}});
-  return actions;
-}
-
-function dashboard(ctx) {
-  if (!cfConfig().token) return {title:"Cloudflare",components:[
-    cfSectionError("cf-config", cfError(cfText("请在 Agent 的插件配置中填写 API Token", "Set an API Token in the Agent's plugin settings"))),
-    cfLabel("cf-token-guide", cfText("按所需功能选择最小权限，创建后将 Token 粘贴到插件配置。", "Choose only the permissions you need, then paste the new token into the plugin settings."), 13, true),
-    {id:"cf-create-token",button:{title:cfText("前往 Cloudflare 创建 Token", "Create a Cloudflare token"),
-      appearance:{accent:"PLUGIN_ACCENT_ORANGE",size:"PLUGIN_COMPONENT_SIZE_COMPACT"},
-      onTap:{openURL:CF_TOKEN_URL}}}
-  ]};
-  var components = [];
-  var zones = cfListZones(1);
-  var selectedID = cfSelectedZone();
-  var zone = null;
-  if (selectedID) {
-    var current = cfZone(selectedID);
-    if (current.ok) zone = current.data;
-  }
-  if (!zone && zones.ok && Array.isArray(zones.data) && zones.data.length) zone = zones.data[0];
-  if (zone) {
-    components.push(cfLabel("cf-zone-heading", cfText("域名与流量", "Zone and traffic"), 18, false));
-    components.push(cfZoneCard(zone, cfGraphQL(zone.id)));
-  } else if (!zones.ok) components.push(cfSectionError("cf-zones-error", zones));
-  else components.push(cfLabel("cf-zones-empty", cfText("当前令牌没有可列出的域名", "No zones are available to this token"), 13, true));
-  components.push(cfNavigate("cf-zones-link", cfText("查看域名", "Browse zones"), "zones"));
-  if (zone) components.push(cfNavigate("cf-dns-link", cfText("查看 DNS 记录", "Browse DNS records"), "dns"));
-  var accountID = "";
-  try { accountID = cfAccountID(null, zone); } catch (_) { /* Account-only setups can add an ID later. */ }
-  if (accountID) {
-    components.push(cfLabel("cf-deploy-heading", cfText("部署", "Deployments"), 18, false));
-    var workers = cfListWorkers(accountID);
-    if (workers.ok) {
-      var scripts = Array.isArray(workers.data) ? workers.data : workers.data && workers.data.items || [];
-      components.push(cfLabel("cf-workers-count", "Workers · " + scripts.length, 14, false));
-      components.push(cfNavigate("cf-workers-link", cfText("查看 Workers", "Browse Workers"), "workers"));
-    } else components.push(cfSectionError("cf-workers-error", workers));
-    var pages = cfListProjects(accountID, 1);
-    if (pages.ok) {
-      components.push(cfLabel("cf-pages-count", "Pages · " + (pages.info.total_count || (pages.data || []).length), 14, false));
-      var items = (pages.data || []).slice(0, 3).map(function(project) {
-        var latest = project.latest_deployment;
-        return {title:cfShort(project.name, 40),subtitle:latest && latest.latest_stage && latest.latest_stage.status || "—",
-          onTap:{plugin:{actionId:"open_project",params:{name:project.name}}}};
-      });
-      if (items.length) components.push(cfListNode("cf-pages-preview", items));
-      components.push(cfNavigate("cf-pages-link", cfText("查看 Pages", "Browse Pages"), "pages"));
-    } else components.push(cfSectionError("cf-pages-error", pages));
-  } else components.push(cfLabel("cf-account-hint", cfText("查看 Workers 和 Pages 需填写账户 ID，或选择一个域名", "Enter an account ID or select a zone to browse Workers and Pages"), 13, true));
-  return {title:"Cloudflare",components:components,
-    navigationActions:[{title:cfText("刷新", "Refresh"),onTap:{plugin:{actionId:"refresh"}}}]};
-}
-
-function detail(ctx) {
-  var route = ctx.route || "zones";
-  var page = cfPage(cfSaved("page_" + route.replace(/-/g, "_"), 1));
-  var components = [], result, title;
-  if (route === "zones") {
-    title = cfText("域名", "Zones"); result = cfListZones(page);
-    if (result.ok) components.push(cfListNode("cf-zones-list", (result.data || []).map(function(z) {
-      return {title:z.name,subtitle:z.status + (z.account && z.account.name ? " · " + z.account.name : ""),
-        onTap:{plugin:{actionId:"select_zone",params:{zone_id:z.id}}}};
-    })));
-  } else if (route === "dns") {
-    title = "DNS"; result = cfListDNS(null, page);
-    if (result.ok) components.push(cfListNode("cf-dns-list", (result.data || []).map(function(r) {
-      return {title:cfShort(r.type + " · " + r.name, 60),subtitle:cfShort(r.content, 90)};
-    })));
-  } else if (route === "workers") {
-    title = "Workers"; result = cfListWorkers();
-    if (result.ok) {
-      var workers = Array.isArray(result.data) ? result.data : result.data && result.data.items || [];
-      components.push(cfListNode("cf-workers-list", workers.slice(0, 100).map(function(w) {
-        return {title:w.id,subtitle:w.modified_on || w.modified_at || ""};
-      })));
-    }
-  } else if (route === "pages") {
-    title = "Pages"; result = cfListProjects(null, page);
-    if (result.ok) components.push(cfListNode("cf-pages-list", (result.data || []).map(function(p) {
-      var status = p.latest_deployment && p.latest_deployment.latest_stage && p.latest_deployment.latest_stage.status || "—";
-      return {title:p.name,subtitle:status,onTap:{plugin:{actionId:"open_project",params:{name:p.name}}}};
-    })));
-  } else if (route === "pages-project") {
-    var project = cfSaved("selected_project", "");
-    title = project || "Pages";
-    if (!project) result = cfError(cfText("请先选择 Pages 项目", "Select a Pages project first"));
-    else result = cfListDeployments(null, project, page);
-    if (result.ok) components.push(cfListNode("cf-deployments-list", (result.data || []).map(function(d) {
-      var compact = cfCompactDeployment(d);
-      return {title:(compact.environment || "—") + " · " + (compact.status || "—"),
-        subtitle:cfShort((compact.created_on || "") + " · " + (compact.id || ""), 80)};
-    })));
-  } else return {title:"Cloudflare",components:[cfSectionError("cf-route-error", cfError(cfText("页面不存在", "Page not found")))]};
-  if (!result.ok) components.push(cfSectionError("cf-detail-error", result));
-  else if (!components.length || components[0].list && !components[0].list.items.length) components.push(cfLabel("cf-empty", cfText("暂无数据", "No data"), 13, true));
-  return {title:title,components:components,
-    navigationActions:cfPageActions(route, page, route !== "workers" && result.ok && cfHasMore(result))};
-}
-
-var actions = {
-  refresh:function() { return {effects:[{refresh:{surface:"current"}}]}; },
-  select_zone:function(ctx) {
-    cfStore("selected_zone", cfID(ctx.params.zone_id, cfText("Zone ID", "Zone ID")));
-    cfStore("page_dns", 1);
-    return {effects:[{refresh:{surface:"current"}},{toast:{text:cfText("已切换域名", "Zone selected")}}]};
-  },
-  open_project:function(ctx) {
-    cfStore("selected_project", cfProject(ctx.params.name));
-    cfStore("page_pages_project", 1);
-    return {effects:[{navigate:{surface:"detail",route:"pages-project"}}]};
-  },
-  change_page:function(ctx) {
-    var route = ctx.params.route;
-    if (["zones", "dns", "pages", "pages-project"].indexOf(route) < 0) throw new Error(cfText("页面无效", "Invalid page"));
-    cfStore("page_" + route.replace(/-/g, "_"), cfPage(ctx.params.page));
-    return {effects:[{refresh:{surface:"current"}}]};
-  }
-};

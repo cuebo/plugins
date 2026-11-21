@@ -12,10 +12,8 @@ let deploymentStatus = "failure";
 let denied = new Set();
 let token = "test-token";
 let language = "zh-Hans";
-let shownCard;
 const requests = [];
 const tools = {};
-const storage = {};
 
 function apiResponse(result, extra = {}) {
   return JSON.stringify({status: 200, body: JSON.stringify({success: true, result, ...extra})});
@@ -26,11 +24,6 @@ function notFound() {
 const host = {
   language: () => language,
   config: () => JSON.stringify({token, account_id: accountID}),
-  storage: (action, key, value) => {
-    if (action === "get") return JSON.stringify(storage[key] === undefined ? null : storage[key]);
-    if (action === "put") { storage[key] = JSON.parse(value); return JSON.stringify({saved: true}); }
-    throw new Error("unexpected storage action");
-  },
   request: raw => {
     const request = JSON.parse(raw);
     requests.push(request);
@@ -74,11 +67,6 @@ const host = {
     if (path === `/accounts/${accountID}/pages/projects/site/deployments/${deploymentID}/retry`) return apiResponse({id: deploymentID, latest_stage: {status: "queued"}});
     throw new Error(`Unexpected request ${request.method} ${path}`);
   },
-  ui: (action, raw) => {
-    assert.strictEqual(action, "show");
-    shownCard = JSON.parse(raw);
-    return JSON.stringify({ok: true});
-  },
 };
 const context = {
   host, registerTool: (name, run) => { tools[name] = run; },
@@ -91,6 +79,10 @@ function lastRequest() { return requests[requests.length - 1]; }
 
 const manifest = JSON.parse(fs.readFileSync(__dirname + "/plugin.json", "utf8"));
 assert.strictEqual(manifest.tools.length, Object.keys(tools).length);
+assert.notStrictEqual(manifest.ui, true);
+assert(!manifest.uiProtocol && !manifest.capabilities?.includes("generative_ui"));
+assert.strictEqual(context.dashboard, undefined);
+assert.strictEqual(context.detail, undefined);
 for (const tool of manifest.tools) {
   assert(tools[tool.name], `missing ${tool.name}`);
   if (/^(create_|update_|delete_|purge_|retry_)/.test(tool.name)) assert.strictEqual(tool.requiresApproval, true);
@@ -100,24 +92,14 @@ assert.strictEqual(invoke("dns_records", {zone_id: zoneID}).records[0].content, 
 assert.strictEqual(invoke("workers").workers[0].id, "worker-one");
 assert.strictEqual(invoke("pages_projects").projects[0].latest_deployment.status, "failure");
 assert.strictEqual(invoke("pages_deployments", {project_name: "site"}).deployments[0].status, "failure");
-assert.strictEqual(invoke("zone_card", {zone_id: zoneID}).traffic.requests, 21);
-assert.strictEqual(shownCard.components[0].card.aspectRatio, 1);
-assert.strictEqual(shownCard.components[0].card.expandOnTap, true);
-assert(!JSON.stringify(shownCard).includes('"button"'));
-assert(JSON.stringify(shownCard).length < 64000);
-const ids = [];
-function collect(node) {
-  ids.push(node.id);
-  for (const content of Object.values(node)) {
-    if (content && typeof content === "object") {
-      for (const key of ["children", "bottomChildren", "detailChildren"]) {
-        if (Array.isArray(content[key])) content[key].forEach(collect);
-      }
-    }
-  }
-}
-shownCard.components.forEach(collect);
-assert.strictEqual(ids.length, new Set(ids).size);
+const overview = invoke("zone_overview", {zone_id: zoneID});
+assert.strictEqual(overview.traffic.requests, 21);
+assert.strictEqual(overview.traffic.edge_response_bytes, 3072);
+assert.strictEqual(overview.traffic.hourly_requests.length, 2);
+assert.strictEqual(overview.zone.name, "example.com");
+assert.strictEqual(overview.shown, undefined);
+assert.strictEqual(invoke("zone_overview").ok, false);
+assert.strictEqual(invoke("dns_records").ok, false);
 
 assert.strictEqual(invoke("create_dns_record", {zone_id: zoneID, type: "A", name: "api", content: "192.0.2.2"}).verified, true);
 assert.strictEqual(lastRequest().method, "GET");
@@ -140,39 +122,16 @@ assert.strictEqual(invoke("delete_dns_record", {zone_id: zoneID, record_id: reco
 assert.strictEqual(record, null);
 
 denied.add("/graphql");
-const degraded = invoke("zone_card", {zone_id: zoneID});
+const degraded = invoke("zone_overview", {zone_id: zoneID});
 assert.strictEqual(degraded.ok, true);
 assert.strictEqual(degraded.traffic.available, false);
 denied.clear();
-denied.add(`/accounts/${accountID}/workers/scripts`);
-const dashboardResult = context.dashboard({});
-assert(dashboardResult.components.some(c => c.stateBlock));
-assert(dashboardResult.components.some(c => c.id === "cf-pages-count"));
-denied.clear();
-const zonePage = context.detail({route: "zones"});
-assert.strictEqual(zonePage.components[0].list.items[0].title, "example.com");
-const selected = context.actions.select_zone({params: {zone_id: zoneID}});
-assert.strictEqual(storage.selected_zone, zoneID);
-assert.strictEqual(selected.effects[0].refresh.surface, "current");
-assert.strictEqual(context.detail({route: "dns"}).title, "DNS");
-assert.strictEqual(context.actions.open_project({params: {name: "site"}}).effects[0].navigate.route, "pages-project");
-assert.strictEqual(context.detail({route: "pages-project"}).components[0].list.items.length, 1);
-if (process.env.CUEBO_CF_FIXTURES) fs.writeFileSync(process.env.CUEBO_CF_FIXTURES, JSON.stringify({card: shownCard.components,
-  dashboard: dashboardResult.components, detail: context.detail({route: "zones"}).components}));
-
-language = "en";
-assert.strictEqual(context.detail({route: "zones"}).title, "Zones");
-language = "zh-Hans";
+assert.strictEqual(context.actions, undefined);
 
 token = "";
 const requestCount = requests.length;
 assert.strictEqual(invoke("zones").ok, false);
 assert.strictEqual(requests.length, requestCount);
-const setupPage = context.dashboard({});
-assert.strictEqual(setupPage.components.find(c => c.id === "cf-create-token").button.onTap.openURL,
-  "https://dash.cloudflare.com/profile/api-tokens");
-assert.strictEqual(requests.length, requestCount);
 language = "en";
-assert.strictEqual(context.dashboard({}).components.find(c => c.id === "cf-create-token").button.title,
-  "Create a Cloudflare token");
+assert.strictEqual(invoke("zones").error, "Configure a Cloudflare API Token first");
 console.log("Cloudflare plugin tests passed");
