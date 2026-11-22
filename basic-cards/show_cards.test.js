@@ -16,7 +16,7 @@ vm.createContext(context);
 vm.runInContext(fs.readFileSync(__dirname + '/scripts/cuebo-ui-demo.js', 'utf8'), context);
 vm.runInContext(fs.readFileSync(__dirname + '/main.js', 'utf8'), context);
 
-assert.deepEqual(Object.keys(registered), ['show_cards']);
+assert.deepEqual(Object.keys(registered), ['show_cards', 'show_information']);
 const result = JSON.parse(registered.show_cards(JSON.stringify({cards: [
   {title: '日程', headline: '评审会', facts: [{text: '会议室 301'}]},
   {title: '文件', resource: {title: '需求文档.pdf', url: 'https://example.com/doc'}},
@@ -129,9 +129,17 @@ assert.equal(shown.components[2].grid.children.length, 1);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {type: 'information', title: '缺失内容', subtitle: '来源'}
 ]})), /引用内容无效/);
-assert.throws(() => registered.show_cards(JSON.stringify({cards: [
-  {type: 'information', title: '缺失副标题', content: '内容'}
-]})), /卡片副标题无效/);
+const focusedResult = JSON.parse(registered.show_information(JSON.stringify({
+  title: '研究结论', content: '已核实的关键结论。'
+})));
+assert.equal(focusedResult.shown, true);
+assert.equal(focusedResult.count, 1);
+assert.equal(shown.components.length, 1);
+assert.equal(shown.components[0].card.children.length, 2);
+assert.equal(shown.components[0].card.children[1].stack.children[1].text.text, '已核实的关键结论。');
+assert.throws(() => registered.show_information(JSON.stringify({
+  title: '缺少内容'
+})), /引用内容无效/);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {type: 'information', title: '过长', subtitle: '来源', content: '字'.repeat(1201)}
 ]})), /引用内容无效/);

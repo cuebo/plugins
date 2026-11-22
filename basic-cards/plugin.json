@@ -1,20 +1,21 @@
 {
   "id": "basic-cards",
   "name": "基础卡片",
-  "description": "在对话中展示双列摘要卡和单行信息卡，支持引用内容、资源、趋势、进度与状态。",
+  "description": "展示单行信息卡与双列摘要卡，适用于已核实的结论、说明、资源、趋势和状态。",
   "localizations": {
     "en": {
       "name": "Basic Cards",
-      "description": "Show compact summary cards and full-width information cards with quoted content.",
-      "pe": "Use basic cards for verified user or tool data that benefits from a visual summary. For a title, subtitle, and a substantial excerpt or conclusion, choose type:information and put the full text in content; each information card occupies one row. Use the default compact type for schedules, resources, metrics, trends, progress, weather, or device status. Each square compact card should contain one main topic, no more than two short facts and two footer items. Compact cards open a detail sheet; do not place buttons on the card face. After showing cards, give only a short conclusion or important caveat without repeating every value. Use only verified facts and omit missing fields. Respect requests for text only. A result with shown:true confirms display; shortenedCards lists compact previews with omitted details.",
+      "description": "Show full-width information cards for verified findings and compact cards for structured data.",
+      "pe": "When a response has a useful, verified finding, conclusion, explanation, or excerpt that stands on its own, prefer plugin_basic_cards_show_information to display it as a full-width information card, even when the user did not ask for a card. Put the key paragraph in content and a short topic in title. Subtitle is optional; omit it when no real source or context is available. Use plugin_basic_cards_show_cards for multiple cards or structured schedules, resources, metrics, trends, progress, weather, and device status. Do not add a card to a trivial one-line answer, casual conversation, long tutorial, or code response. Respect explicit text-only requests. Use only verified facts; a tool result with shown:true confirms display. After showing a card, give only a brief conclusion or caveat instead of repeating its content.",
       "toolDescriptions": {
-        "show_cards": "Show 1 to 6 cards using real data. Use type:information for a full-width title, subtitle, and quoted content; otherwise use compact cards for schedules, resources, metrics, trends, progress, weather, or device status."
+        "show_cards": "Show 1 to 6 compact or mixed cards using verified data for schedules, resources, metrics, trends, progress, weather, and device status. Use show_information for a single finding or explanation.",
+        "show_information": "Show one full-width information card for a verified finding, conclusion, explanation, or excerpt. Use a short title and the key paragraph; subtitle is optional. Prefer this when the content stands on its own, unless the user asked for text only."
       }
     }
   },
   "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/basic-cards.png",
-  "pe": "基础卡片可用于把真实信息直观展示给用户。遇到一段需要完整呈现的结论、说明或摘录时，使用 type:information，填写标题、副标题和 content 引用内容；信息卡每张独占一行，内容左对齐。会议安排、文件、关键数值、趋势、进度、天气、设备状态等短摘要继续使用默认双列正方形卡片。双列卡片每张选一个主要内容块，整卡点开半弹层查看完整信息，卡片表面不放按钮：标题尽量不超过7个汉字，每张最多2条简短事实和2条底部信息。展示成功后默认只补一句结论或必要异常，不逐项复述卡片；若用户要求明细，再展开说明。只传用户提供或工具查到的事实；缺少数据就省略对应字段，不编造图表点、步骤、链接或操作。用户明确只要文字时遵从。工具返回 shown:true 才表示已展示；shortenedCards 非空表示对应双列卡片预览省略了细节。",
-  "version": "1.13.8",
+  "pe": "用户没有要求纯文字，且回答中有能独立成段的已核实要点、结论、说明或摘录时，优先调用 plugin_basic_cards_show_information 展示单张信息卡，即使用户没有提到卡片。title 写简短主题，content 写最关键的一段；subtitle 无真实来源或上下文时可省略，不编造。多个卡片或日程、资源、指标、趋势、进度、天气、设备状态等结构化信息用 plugin_basic_cards_show_cards。闲聊、单句即可说清的事实、长教程和代码回答不强行制卡。只传用户提供或工具查到的事实，尊重明确只要文字的要求。工具返回 shown:true 才表示已展示；展示后正文只补简短结论或必要异常，不重复卡片内容。双列卡片可点击查看详情，shortenedCards 表示其预览省略了细节。",
+  "version": "1.13.9",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "files": {
@@ -24,7 +25,7 @@
   "tools": [
     {
       "name": "show_cards",
-      "description": "展示 1 至 6 张真实信息卡片。type:information 展示独占一行的标题、副标题和引用内容；默认双列短摘要可表达安排、资源、指标趋势、进度、天气、设备状态。展示后正文只补简短结论。",
+      "description": "展示 1 至 6 张真实数据卡片，适合日程、资源、指标趋势、进度、天气、设备状态；可混排 type:information 的单行信息卡。单张结论或说明优先用 show_information。",
       "parameters": {
         "cards": {
           "type": "array",
@@ -32,7 +33,7 @@
           "required": true,
           "items": {
             "type": "object",
-            "description": "默认双列短摘要；type:information 时展示单行宽卡，须填写 title、subtitle、content",
+            "description": "默认双列短摘要；type:information 时展示单行宽卡，填写 title、content，subtitle 可省略",
             "required": false,
             "properties": {
               "type": {
@@ -47,7 +48,7 @@
               },
               "subtitle": {
                 "type": "string",
-                "description": "时间、对象或来源；信息卡必填且完整展示，双列摘要卡过长会截断",
+                "description": "时间、对象或来源；信息卡可省略，双列摘要卡过长会截断",
                 "required": false
               },
               "content": {
@@ -219,6 +220,27 @@
               }
             }
           }
+        }
+      }
+    },
+    {
+      "name": "show_information",
+      "description": "展示一张独占一行的信息卡。已核实的要点、结论、说明或摘录能独立成段时优先调用；只需标题和关键内容，副标题可省略。用户明确只要文字时遵从。",
+      "parameters": {
+        "title": {
+          "type": "string",
+          "description": "卡片的简短主题",
+          "required": true
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "可选的真实来源、时间或上下文；没有时省略",
+          "required": false
+        },
+        "content": {
+          "type": "string",
+          "description": "已核实的关键结论、说明或摘录，最多 1200 字",
+          "required": true
         }
       }
     }

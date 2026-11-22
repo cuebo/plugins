@@ -189,7 +189,7 @@ function renderInformationCard(card, index) {
   var children = [
     {id:id+"-title",text:{text:card.title,fontSize:17,weight:"PLUGIN_FONT_WEIGHT_SEMIBOLD"}}
   ];
-  children.push({id:id+"-subtitle",text:{text:card.subtitle,fontSize:13,style:"PLUGIN_TEXT_STYLE_SUBTITLE"}});
+  if (card.subtitle) children.push({id:id+"-subtitle",text:{text:card.subtitle,fontSize:13,style:"PLUGIN_TEXT_STYLE_SUBTITLE"}});
   // A single system Divider is a hairline. Four adjacent dividers form a
   // clearer blockquote rule and keep the line as tall as the wrapped text.
   var rule = [0,1,2,3].map(function(i) { return {id:id+"-quote-rule-"+i,divider:{}}; });
@@ -214,7 +214,7 @@ function showCards(raw) {
     if (!item || typeof item !== "object") throw new Error("卡片无效");
     if (item.type === "information") {
       var info = {title:requiredText(item.title,"卡片标题",60),
-        subtitle:requiredText(item.subtitle,"卡片副标题",120),
+        subtitle:optionalText(item.subtitle,"卡片副标题",120),
         content:requiredText(item.content,"引用内容",1200),
         accent:optionalText(item.accent,"强调色",10) || "blue"};
       if (["blue","green","orange","purple","teal","red"].indexOf(info.accent) < 0) throw new Error("强调色无效");
@@ -271,6 +271,16 @@ function showCards(raw) {
 }
 
 registerTool("show_cards", showCards);
+
+// A focused tool makes the information layout easy to discover without
+// requiring the model to navigate the general card schema and its type field.
+registerTool("show_information", function(raw) {
+  var input = JSON.parse(raw || "{}");
+  return showCards(JSON.stringify({cards:[{
+    type:"information",title:input.title,subtitle:input.subtitle,
+    content:input.content,accent:input.accent
+  }]}));
+});
 
 // These are data examples, not new component types. The plugin homepage renders
 // them through the same reusable card composition used for conversation cards.
