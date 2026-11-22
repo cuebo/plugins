@@ -109,6 +109,8 @@ assert.equal(information.children[2].card.appearance.variant, 'PLUGIN_COMPONENT_
 const quoteRow = information.children[2].card.children[0].stack;
 assert.equal(quoteRow.children[0].icon.appearance.iconSource.systemName, 'quote.opening');
 assert.equal(quoteRow.children[1].text.text, informationContent);
+assert.equal(quoteRow.children[1].text.fontSize, 14);
+assert.equal(quoteRow.children[1].text.style, 'PLUGIN_TEXT_STYLE_SUBTITLE');
 assert.equal(quoteRow.children[1].text.alignment, 'PLUGIN_TEXT_ALIGNMENT_LEADING');
 assert.equal(shown.components[1].grid.columns, 2);
 assert.equal(shown.components[1].grid.children.length, 1);
