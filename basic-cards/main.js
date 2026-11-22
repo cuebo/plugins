@@ -190,9 +190,12 @@ function renderInformationCard(card, index) {
     {id:id+"-title",text:{text:card.title,fontSize:17,weight:"PLUGIN_FONT_WEIGHT_SEMIBOLD"}}
   ];
   children.push({id:id+"-subtitle",text:{text:card.subtitle,fontSize:13,style:"PLUGIN_TEXT_STYLE_SUBTITLE"}});
+  // A single system Divider is a hairline. Four adjacent dividers form a
+  // clearer blockquote rule and keep the line as tall as the wrapped text.
+  var rule = [0,1,2,3].map(function(i) { return {id:id+"-quote-rule-"+i,divider:{}}; });
   children.push({id:id+"-quote",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:[
-      {id:id+"-quote-rule",divider:{}},
-      {id:id+"-content",text:{text:card.content,fontSize:13,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
+    {id:id+"-quote-rule",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:0,children:rule}},
+    {id:id+"-content",text:{text:card.content,fontSize:12,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
     ]}});
   return {id:id,card:{children:children,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:14,spacing:8}};
 }
