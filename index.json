@@ -6,7 +6,7 @@
       "name": "基础卡片",
       "description": "展示单行信息卡与双列摘要卡，适用于已核实的结论、说明、资源、趋势和状态。",
       "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/basic-cards.png",
-      "version": "1.13.9",
+      "version": "1.14.0",
       "path": "basic-cards",
       "toolCount": 2,
       "networkHosts": []

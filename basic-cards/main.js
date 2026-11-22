@@ -186,6 +186,7 @@ function renderCard(card, index, summary) {
 function renderInformationCard(card, index) {
   var id = "basic-information-" + index;
   var accent = "PLUGIN_ACCENT_" + card.accent.toUpperCase();
+  var contents = card.contents || [card.content];
   var children = [
     {id:id+"-title",text:{text:card.title,fontSize:17,weight:"PLUGIN_FONT_WEIGHT_SEMIBOLD"}}
   ];
@@ -195,7 +196,9 @@ function renderInformationCard(card, index) {
   var rule = [0,1,2,3].map(function(i) { return {id:id+"-quote-rule-"+i,divider:{}}; });
   children.push({id:id+"-quote",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:[
     {id:id+"-quote-rule",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:0,children:rule}},
-    {id:id+"-content",text:{text:card.content,fontSize:12,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
+    {id:id+"-contents",stack:{spacing:6,children:contents.map(function(value,i) {
+      return {id:id+"-content-"+i,text:{text:value,fontSize:12,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}};
+    })}}
     ]}});
   return {id:id,card:{children:children,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:14,spacing:8}};
 }
@@ -213,9 +216,14 @@ function showCards(raw) {
   input.cards.forEach(function(item, index) {
     if (!item || typeof item !== "object") throw new Error("卡片无效");
     if (item.type === "information") {
+      var contents = optionalItems(item.contents,8);
+      if (item.content != null && contents.length) throw new Error("content 和 contents 只能填写一个");
+      contents = contents.length ? contents.map(function(value) { return requiredText(value,"引用条目",1200); }) :
+        [requiredText(item.content,"引用内容",1200)];
+      if (contents.reduce(function(total,value) { return total + value.length; },0) > 1200) throw new Error("引用内容过长");
       var info = {title:requiredText(item.title,"卡片标题",60),
         subtitle:optionalText(item.subtitle,"卡片副标题",120),
-        content:requiredText(item.content,"引用内容",1200),
+        contents:contents,
         accent:optionalText(item.accent,"强调色",10) || "blue"};
       if (["blue","green","orange","purple","teal","red"].indexOf(info.accent) < 0) throw new Error("强调色无效");
       flushCompactCards();
@@ -278,7 +286,7 @@ registerTool("show_information", function(raw) {
   var input = JSON.parse(raw || "{}");
   return showCards(JSON.stringify({cards:[{
     type:"information",title:input.title,subtitle:input.subtitle,
-    content:input.content,accent:input.accent
+    content:input.content,contents:input.contents,accent:input.accent
   }]}));
 });
 
@@ -329,8 +337,8 @@ function dashboard(ctx) {
       {id:"demo-label",text:{text:english?"Tap a card for details · Sample data for preview only":"点击卡片查看完整信息 · 示例数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
       basicCardExamplesGrid("demo-grid",""),
       renderInformationCard(english?
-        {title:"Information",subtitle:"Example · verified content",content:"A concise conclusion or excerpt can be displayed here. Longer text wraps within the quoted area.",accent:"blue"}:
-        {title:"信息展示",subtitle:"示例 · 已核实内容",content:"这里可以展示一段结论或原文摘录。内容较长时会在引用区内自动换行。",accent:"blue"},"demo"),
+        {title:"Information",subtitle:"Example · verified content",contents:["A concise conclusion or excerpt can be displayed here.","Separate points have a little space between them within the quote block."],accent:"blue"}:
+        {title:"信息展示",subtitle:"示例 · 已核实内容",contents:["这里可以展示一段结论或原文摘录。","多条信息会在同一个引用区内分开显示，并留一点间距。"],accent:"blue"},"demo"),
       {id:"catalog-link",button:{title:english?"View component catalog":"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
         onTap:{navigate:{surface:"detail",route:"catalog"}}}}
     ]

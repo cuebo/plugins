@@ -111,10 +111,13 @@ assert.equal(quoteRow.children[0].stack.axis, 'PLUGIN_STACK_AXIS_HORIZONTAL');
 assert.equal(quoteRow.children[0].stack.spacing, 0);
 assert.equal(quoteRow.children[0].stack.children.length, 4);
 assert.equal(quoteRow.children[0].stack.children.every(node => Object.keys(node.divider).length === 0), true);
-assert.equal(quoteRow.children[1].text.text, informationContent);
-assert.equal(quoteRow.children[1].text.fontSize, 12);
-assert.equal(quoteRow.children[1].text.style, 'PLUGIN_TEXT_STYLE_SUBTITLE');
-assert.equal(quoteRow.children[1].text.alignment, 'PLUGIN_TEXT_ALIGNMENT_LEADING');
+const quotedContents = quoteRow.children[1].stack;
+assert.equal(quotedContents.spacing, 6);
+assert.equal(quotedContents.children.length, 1);
+assert.equal(quotedContents.children[0].text.text, informationContent);
+assert.equal(quotedContents.children[0].text.fontSize, 12);
+assert.equal(quotedContents.children[0].text.style, 'PLUGIN_TEXT_STYLE_SUBTITLE');
+assert.equal(quotedContents.children[0].text.alignment, 'PLUGIN_TEXT_ALIGNMENT_LEADING');
 assert.equal(shown.components[1].grid.columns, 2);
 assert.equal(shown.components[1].grid.children.length, 1);
 JSON.parse(registered.show_cards(JSON.stringify({cards: [
@@ -136,17 +139,37 @@ assert.equal(focusedResult.shown, true);
 assert.equal(focusedResult.count, 1);
 assert.equal(shown.components.length, 1);
 assert.equal(shown.components[0].card.children.length, 2);
-assert.equal(shown.components[0].card.children[1].stack.children[1].text.text, '已核实的关键结论。');
+assert.equal(shown.components[0].card.children[1].stack.children[1].stack.children[0].text.text, '已核实的关键结论。');
+const multiResult = JSON.parse(registered.show_information(JSON.stringify({
+  title: '研究结论', contents: ['第一条信息。', '第二条信息。']
+})));
+assert.equal(multiResult.shown, true);
+assert.equal(multiResult.count, 1);
+const multiContents = shown.components[0].card.children[1].stack.children[1].stack;
+assert.equal(multiContents.spacing, 6);
+assert.deepEqual(multiContents.children.map(node => node.text.text), ['第一条信息。', '第二条信息。']);
 assert.throws(() => registered.show_information(JSON.stringify({
   title: '缺少内容'
 })), /引用内容无效/);
+assert.throws(() => registered.show_information(JSON.stringify({
+  title: '重复字段', content: '一条', contents: ['另一条']
+})), /只能填写一个/);
+assert.throws(() => registered.show_information(JSON.stringify({
+  title: '空数组', contents: []
+})), /引用内容无效/);
+assert.throws(() => registered.show_information(JSON.stringify({
+  title: '过多条目', contents: Array(9).fill('内容')
+})), /条目数量无效/);
+assert.throws(() => registered.show_information(JSON.stringify({
+  title: '总内容过长', contents: ['字'.repeat(700), '字'.repeat(501)]
+})), /引用内容过长/);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {type: 'information', title: '过长', subtitle: '来源', content: '字'.repeat(1201)}
 ]})), /引用内容无效/);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {type: 'unknown', title: '未知', content: '内容'}
 ]})), /卡片类型无效/);
-assert.equal(context.dashboard({config: {}}).components[2].card.children[2].stack.children[1].text.text.includes('引用区'), true);
+assert.equal(context.dashboard({config: {}}).components[2].card.children[2].stack.children[1].stack.children[1].text.text.includes('引用区'), true);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);
