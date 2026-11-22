@@ -92,6 +92,48 @@ assert.equal(denseCard.children.some(node => node.id.endsWith('-detail') || node
 assert.equal(denseCard.children.some(node => node.chart), true);
 assert.equal(denseCard.bottomChildren.length, 1);
 assert.equal(denseCard.detailChildren.some(node => node.id.endsWith('-fact-0')), true);
+const informationContent = '第一段引用内容。\n第二段仍然左对齐，并随卡片宽度自动换行。';
+const informationResult = JSON.parse(registered.show_cards(JSON.stringify({cards: [
+  {type: 'information', title: '重要说明', subtitle: '来源 · 已核实', content: informationContent},
+  {title: '状态', headline: '正常'}
+]})));
+assert.equal(informationResult.count, 2);
+assert.deepEqual(informationResult.shortenedCards, []);
+assert.equal(shown.components.length, 2);
+const information = shown.components[0].card;
+assert.equal(information.aspectRatio, undefined);
+assert.equal(information.height, undefined);
+assert.equal(information.children[0].text.text, '重要说明');
+assert.equal(information.children[1].text.text, '来源 · 已核实');
+assert.equal(information.children[2].card.appearance.variant, 'PLUGIN_COMPONENT_VARIANT_SUBTLE');
+const quoteRow = information.children[2].card.children[0].stack;
+assert.equal(quoteRow.children[0].icon.appearance.iconSource.systemName, 'quote.opening');
+assert.equal(quoteRow.children[1].text.text, informationContent);
+assert.equal(quoteRow.children[1].text.alignment, 'PLUGIN_TEXT_ALIGNMENT_LEADING');
+assert.equal(shown.components[1].grid.columns, 2);
+assert.equal(shown.components[1].grid.children.length, 1);
+JSON.parse(registered.show_cards(JSON.stringify({cards: [
+  {title: '前', headline: '一'},
+  {type: 'information', title: '中', subtitle: '引用来源', content: '引用内容'},
+  {title: '后', headline: '二'}
+]})));
+assert.equal(shown.components.length, 3);
+assert.equal(shown.components[0].grid.children.length, 1);
+assert.equal(shown.components[1].card.children[0].text.text, '中');
+assert.equal(shown.components[2].grid.children.length, 1);
+assert.throws(() => registered.show_cards(JSON.stringify({cards: [
+  {type: 'information', title: '缺失内容', subtitle: '来源'}
+]})), /引用内容无效/);
+assert.throws(() => registered.show_cards(JSON.stringify({cards: [
+  {type: 'information', title: '缺失副标题', content: '内容'}
+]})), /卡片副标题无效/);
+assert.throws(() => registered.show_cards(JSON.stringify({cards: [
+  {type: 'information', title: '过长', subtitle: '来源', content: '字'.repeat(1201)}
+]})), /引用内容无效/);
+assert.throws(() => registered.show_cards(JSON.stringify({cards: [
+  {type: 'unknown', title: '未知', content: '内容'}
+]})), /卡片类型无效/);
+assert.equal(context.dashboard({config: {}}).components[2].card.children[2].card.children[0].stack.children[1].text.text.includes('引用区'), true);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);

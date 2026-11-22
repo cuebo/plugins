@@ -3,6 +3,10 @@ function requiredText(value, name, limit) {
   return value.trim();
 }
 
+function basicCardEnglish() {
+  return typeof host.language === "function" && /^en(?:-|$)/i.test(host.language());
+}
+
 function optionalText(value, name, limit) {
   if (value == null || value === "") return "";
   return requiredText(value, name, limit);
@@ -177,12 +181,48 @@ function renderCard(card, index, summary) {
     appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},aspectRatio:1,padding:8,spacing:4}};
 }
 
+// Information cards use the full chat width and let the quoted text wrap to
+// its natural height. The host already renders these reusable Cuebo nodes.
+function renderInformationCard(card, index) {
+  var id = "basic-information-" + index;
+  var accent = "PLUGIN_ACCENT_" + card.accent.toUpperCase();
+  var children = [
+    {id:id+"-title",text:{text:card.title,fontSize:17,weight:"PLUGIN_FONT_WEIGHT_SEMIBOLD"}}
+  ];
+  children.push({id:id+"-subtitle",text:{text:card.subtitle,fontSize:13,style:"PLUGIN_TEXT_STYLE_SUBTITLE"}});
+  children.push({id:id+"-quote",card:{
+    children:[{id:id+"-quote-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:[
+      {id:id+"-quote-icon",icon:{appearance:{accent:accent,iconSource:{systemName:"quote.opening"},size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}},
+      {id:id+"-content",text:{text:card.content,fontSize:15,weight:"PLUGIN_FONT_WEIGHT_REGULAR",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
+    ]}}],
+    appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE",accent:accent},padding:12
+  }});
+  return {id:id,card:{children:children,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:14,spacing:8}};
+}
+
 function showCards(raw) {
   var input = JSON.parse(raw || "{}");
   if (!Array.isArray(input.cards) || input.cards.length < 1 || input.cards.length > 6) throw new Error("卡片数量需为 1 至 6");
   var shortenedCards = [];
-  var components = input.cards.map(function(item, index) {
+  var components = [], compactCards = [];
+  function flushCompactCards() {
+    if (!compactCards.length) return;
+    components.push({id:"basic-card-grid-"+components.length,grid:{columns:2,spacing:10,children:compactCards}});
+    compactCards = [];
+  }
+  input.cards.forEach(function(item, index) {
     if (!item || typeof item !== "object") throw new Error("卡片无效");
+    if (item.type === "information") {
+      var info = {title:requiredText(item.title,"卡片标题",60),
+        subtitle:requiredText(item.subtitle,"卡片副标题",120),
+        content:requiredText(item.content,"引用内容",1200),
+        accent:optionalText(item.accent,"强调色",10) || "blue"};
+      if (["blue","green","orange","purple","teal","red"].indexOf(info.accent) < 0) throw new Error("强调色无效");
+      flushCompactCards();
+      components.push(renderInformationCard(info,index));
+      return;
+    }
+    if (item.type != null && item.type !== "compact") throw new Error("卡片类型无效");
     var card = {
       title:requiredText(item.title, "卡片标题", 60),
       subtitle:optionalText(item.subtitle, "卡片副标题", 120),
@@ -222,12 +262,12 @@ function showCards(raw) {
     var summary = {shortened:false};
     var rendered = renderCard(card,index,summary);
     if (summary.shortened) shortenedCards.push(index + 1);
-    return rendered;
+    compactCards.push(rendered);
   });
+  flushCompactCards();
   var id = "basic" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36);
-  var layout = {id:"basic-card-grid",grid:{columns:2,spacing:10,children:components}};
-  var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:"信息卡片",components:[layout]})));
-  return JSON.stringify({shown:response.ok === true,count:components.length,shortenedCards:shortenedCards});
+  var response = JSON.parse(host.ui("show", JSON.stringify({id:id,title:basicCardEnglish()?"Information Cards":"信息卡片",components:components})));
+  return JSON.stringify({shown:response.ok === true,count:input.cards.length,shortenedCards:shortenedCards});
 }
 
 registerTool("show_cards", showCards);
@@ -235,6 +275,20 @@ registerTool("show_cards", showCards);
 // These are data examples, not new component types. The plugin homepage renders
 // them through the same reusable card composition used for conversation cards.
 function basicCardExamples() {
+  if (basicCardEnglish()) return [
+    {title:"Schedule",subtitle:"Thu · 10:00–11:00",icon:"calendar",accent:"purple",
+      headline:"Product review",facts:[{icon:"mappin",text:"Building A · Room 301"}],footer:[{icon:"person.2",text:"8 attendees"}]},
+    {title:"File details",subtitle:"Document · 12.4 MB",icon:"folder",accent:"blue",
+      resource:{title:"Product requirements.pdf",subtitle:"Updated 09:42",icon:"doc.text.fill"}},
+    {title:"Weekly data",subtitle:"+12.6% vs last week",icon:"chart.bar",accent:"green",
+      headline:"26,480",points:[{label:"Mon",value:12},{label:"Tue",value:18},{label:"Wed",value:16},{label:"Thu",value:24},{label:"Fri",value:21},{label:"Sat",value:27},{label:"Sun",value:30}]},
+    {title:"Order progress",subtitle:"Order · DP784392",icon:"shippingbox",accent:"orange",
+      headline:"In transit",detail:"Due Friday",steps:[{title:"Shipped"},{title:"In transit"},{title:"Out for delivery"}],currentStep:1},
+    {title:"Weather",subtitle:"Beijing",icon:"cloud.sun",accent:"blue",
+      headline:"12°C",detail:"Cloudy · feels like 10°C",footer:[{icon:"wind",text:"NE wind · level 3"},{icon:"humidity",text:"Humidity 45%"}]},
+    {title:"Device status",subtitle:"Living room · online",icon:"hifispeaker",accent:"purple",
+      headline:"Running",detail:"Up for 3 h 24 min",footer:[{icon:"thermometer",text:"24.0°C"},{icon:"fanblades",text:"Auto"}]}
+  ];
   return [
     {title:"日程安排",subtitle:"周四 · 10:00–11:00",icon:"calendar",accent:"purple",
       headline:"产品评审会",facts:[{icon:"mappin",text:"A 栋 3F · 会议室 301"}],footer:[{icon:"person.2",text:"8 位参与者"}]},
@@ -258,12 +312,16 @@ function basicCardExamplesGrid(gridId, prefix) {
 }
 
 function dashboard(ctx) {
+  var english = basicCardEnglish();
   return {
-    title:"基础卡片",
+    title:english?"Basic Cards":"基础卡片",
     components:[
-      {id:"demo-label",text:{text:"点击卡片查看完整信息 · 示例数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
+      {id:"demo-label",text:{text:english?"Tap a card for details · Sample data for preview only":"点击卡片查看完整信息 · 示例数据仅用于预览",style:"PLUGIN_TEXT_STYLE_CAPTION"}},
       basicCardExamplesGrid("demo-grid",""),
-      {id:"catalog-link",button:{title:"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
+      renderInformationCard(english?
+        {title:"Information",subtitle:"Example · verified content",content:"A concise conclusion or excerpt can be displayed here. Longer text wraps within the quoted area.",accent:"blue"}:
+        {title:"信息展示",subtitle:"示例 · 已核实内容",content:"这里可以展示一段结论或原文摘录。内容较长时会在引用区内自动换行。",accent:"blue"},"demo"),
+      {id:"catalog-link",button:{title:english?"View component catalog":"查看组件目录",appearance:{accent:"PLUGIN_ACCENT_BLUE"},
         onTap:{navigate:{surface:"detail",route:"catalog"}}}}
     ]
   };

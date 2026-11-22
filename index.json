@@ -4,9 +4,9 @@
     {
       "id": "basic-cards",
       "name": "基础卡片",
-      "description": "在对话中展示通用信息卡片，支持摘要、资源、趋势、步骤进度与状态。",
+      "description": "在对话中展示双列摘要卡和单行信息卡，支持引用内容、资源、趋势、进度与状态。",
       "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/basic-cards.png",
-      "version": "1.13.2",
+      "version": "1.13.4",
       "path": "basic-cards",
       "toolCount": 1,
       "networkHosts": []

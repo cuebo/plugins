@@ -1,10 +1,20 @@
 {
   "id": "basic-cards",
   "name": "基础卡片",
-  "description": "在对话中展示通用信息卡片，支持摘要、资源、趋势、步骤进度与状态。",
+  "description": "在对话中展示双列摘要卡和单行信息卡，支持引用内容、资源、趋势、进度与状态。",
+  "localizations": {
+    "en": {
+      "name": "Basic Cards",
+      "description": "Show compact summary cards and full-width information cards with quoted content.",
+      "pe": "Use basic cards for verified user or tool data that benefits from a visual summary. For a title, subtitle, and a substantial excerpt or conclusion, choose type:information and put the full text in content; each information card occupies one row. Use the default compact type for schedules, resources, metrics, trends, progress, weather, or device status. Each square compact card should contain one main topic, no more than two short facts and two footer items. Compact cards open a detail sheet; do not place buttons on the card face. After showing cards, give only a short conclusion or important caveat without repeating every value. Use only verified facts and omit missing fields. Respect requests for text only. A result with shown:true confirms display; shortenedCards lists compact previews with omitted details.",
+      "toolDescriptions": {
+        "show_cards": "Show 1 to 6 cards using real data. Use type:information for a full-width title, subtitle, and quoted content; otherwise use compact cards for schedules, resources, metrics, trends, progress, weather, or device status."
+      }
+    }
+  },
   "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/basic-cards.png",
-  "pe": "基础卡片可用于把真实信息直观展示给用户。遇到会议安排、文件或网页、关键数值、趋势、进度、天气、设备状态等适合卡片的内容时，可调用 plugin_basic_cards_show_cards；按数据选择卡片字段，不要求固定场景或用户说出卡片名称。双列正方形卡片只放短摘要，每张选一个主要内容块，整卡点开半弹层查看完整信息，卡片表面不放按钮：标题尽量不超过7个汉字，每张最多2条简短事实和2条底部信息。展示成功后默认只补一句结论或必要异常，不逐项复述卡片；若用户要求明细，再展开说明。只传用户提供或工具查到的事实；缺少数据就省略对应字段，不编造图表点、步骤、链接或操作。用户明确只要文字时遵从。工具返回 shown:true 才表示已展示；卡片可点击在半弹层查看完整信息；shortenedCards 非空表示对应序号的预览省略了细节。",
-  "version": "1.13.2",
+  "pe": "基础卡片可用于把真实信息直观展示给用户。遇到一段需要完整呈现的结论、说明或摘录时，使用 type:information，填写标题、副标题和 content 引用内容；信息卡每张独占一行，内容左对齐。会议安排、文件、关键数值、趋势、进度、天气、设备状态等短摘要继续使用默认双列正方形卡片。双列卡片每张选一个主要内容块，整卡点开半弹层查看完整信息，卡片表面不放按钮：标题尽量不超过7个汉字，每张最多2条简短事实和2条底部信息。展示成功后默认只补一句结论或必要异常，不逐项复述卡片；若用户要求明细，再展开说明。只传用户提供或工具查到的事实；缺少数据就省略对应字段，不编造图表点、步骤、链接或操作。用户明确只要文字时遵从。工具返回 shown:true 才表示已展示；shortenedCards 非空表示对应双列卡片预览省略了细节。",
+  "version": "1.13.4",
   "ui": true,
   "uiProtocol": "cuebo-v1",
   "files": {
@@ -14,7 +24,7 @@
   "tools": [
     {
       "name": "show_cards",
-      "description": "用双列短摘要展示 1 至 6 张真实信息卡片；正文默认只补一句结论或必要异常，用户要明细时再展开。可表达安排、资源、指标趋势、进度、天气、设备状态等场景；链接仅用于真实网页。",
+      "description": "展示 1 至 6 张真实信息卡片。type:information 展示独占一行的标题、副标题和引用内容；默认双列短摘要可表达安排、资源、指标趋势、进度、天气、设备状态。展示后正文只补简短结论。",
       "parameters": {
         "cards": {
           "type": "array",
@@ -22,17 +32,27 @@
           "required": true,
           "items": {
             "type": "object",
-            "description": "一张通用卡片，按需要选填内容，不要凑字段",
+            "description": "默认双列短摘要；type:information 时展示单行宽卡，须填写 title、subtitle、content",
             "required": false,
             "properties": {
+              "type": {
+                "type": "string",
+                "description": "information 为单行信息卡；省略或 compact 为双列摘要卡",
+                "required": false
+              },
               "title": {
                 "type": "string",
-                "description": "简短抬头，建议不超过7个汉字，例如会议安排、本周数据",
+                "description": "卡片标题；双列摘要卡建议不超过7个汉字，信息卡可用完整标题",
                 "required": true
               },
               "subtitle": {
                 "type": "string",
-                "description": "简短时间、对象或来源；过长会在卡片中截断",
+                "description": "时间、对象或来源；信息卡必填且完整展示，双列摘要卡过长会截断",
+                "required": false
+              },
+              "content": {
+                "type": "string",
+                "description": "仅 type:information 使用：左对齐引用区的完整内容，最多 1200 字",
                 "required": false
               },
               "icon": {
