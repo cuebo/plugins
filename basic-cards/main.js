@@ -193,7 +193,7 @@ function renderInformationCard(card, index) {
   children.push({id:id+"-quote",card:{
     children:[{id:id+"-quote-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:[
       {id:id+"-quote-icon",icon:{appearance:{accent:accent,iconSource:{systemName:"quote.opening"},size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}},
-      {id:id+"-content",text:{text:card.content,fontSize:14,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
+      {id:id+"-content",text:{text:card.content,fontSize:13,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
     ]}}],
     appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE",accent:accent},padding:12
   }});
