@@ -190,13 +190,10 @@ function renderInformationCard(card, index) {
     {id:id+"-title",text:{text:card.title,fontSize:17,weight:"PLUGIN_FONT_WEIGHT_SEMIBOLD"}}
   ];
   children.push({id:id+"-subtitle",text:{text:card.subtitle,fontSize:13,style:"PLUGIN_TEXT_STYLE_SUBTITLE"}});
-  children.push({id:id+"-quote",card:{
-    children:[{id:id+"-quote-row",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:[
-      {id:id+"-quote-icon",icon:{appearance:{accent:accent,iconSource:{systemName:"quote.opening"},size:"PLUGIN_COMPONENT_SIZE_COMPACT"}}},
+  children.push({id:id+"-quote",stack:{axis:"PLUGIN_STACK_AXIS_HORIZONTAL",spacing:10,children:[
+      {id:id+"-quote-rule",divider:{}},
       {id:id+"-content",text:{text:card.content,fontSize:13,weight:"PLUGIN_FONT_WEIGHT_REGULAR",style:"PLUGIN_TEXT_STYLE_SUBTITLE",alignment:"PLUGIN_TEXT_ALIGNMENT_LEADING"}}
-    ]}}],
-    appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SUBTLE",accent:accent},padding:12
-  }});
+    ]}});
   return {id:id,card:{children:children,appearance:{variant:"PLUGIN_COMPONENT_VARIANT_SURFACE",accent:accent},padding:14,spacing:8}};
 }
 

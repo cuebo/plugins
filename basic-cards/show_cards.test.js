@@ -105,9 +105,9 @@ assert.equal(information.aspectRatio, undefined);
 assert.equal(information.height, undefined);
 assert.equal(information.children[0].text.text, '重要说明');
 assert.equal(information.children[1].text.text, '来源 · 已核实');
-assert.equal(information.children[2].card.appearance.variant, 'PLUGIN_COMPONENT_VARIANT_SUBTLE');
-const quoteRow = information.children[2].card.children[0].stack;
-assert.equal(quoteRow.children[0].icon.appearance.iconSource.systemName, 'quote.opening');
+const quoteRow = information.children[2].stack;
+assert.equal(quoteRow.axis, 'PLUGIN_STACK_AXIS_HORIZONTAL');
+assert.deepEqual(Object.keys(quoteRow.children[0].divider), []);
 assert.equal(quoteRow.children[1].text.text, informationContent);
 assert.equal(quoteRow.children[1].text.fontSize, 13);
 assert.equal(quoteRow.children[1].text.style, 'PLUGIN_TEXT_STYLE_SUBTITLE');
@@ -135,7 +135,7 @@ assert.throws(() => registered.show_cards(JSON.stringify({cards: [
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {type: 'unknown', title: '未知', content: '内容'}
 ]})), /卡片类型无效/);
-assert.equal(context.dashboard({config: {}}).components[2].card.children[2].card.children[0].stack.children[1].text.text.includes('引用区'), true);
+assert.equal(context.dashboard({config: {}}).components[2].card.children[2].stack.children[1].text.text.includes('引用区'), true);
 assert.throws(() => registered.show_cards(JSON.stringify({cards: [
   {title: '文件', resource: {title: '秘密', url: 'file:///private/secret'}}
 ]})), /链接无效/);
