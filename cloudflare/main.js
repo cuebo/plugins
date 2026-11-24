@@ -21,17 +21,41 @@ function cfSafeMessage(value, token) {
   return message.slice(0, 180);
 }
 
+function cfAuthorizedRequest(request, config) {
+  request.auth = "oauth";
+  try {
+    var oauthResponse = JSON.parse(host.request(JSON.stringify(request)));
+    oauthResponse.authMethod = "oauth";
+    return oauthResponse;
+  } catch (error) {
+    if (String(error).indexOf("请先连接插件账号") < 0) throw error;
+    if (!config.token) throw new Error(cfText("请先连接 Cloudflare 账号，或填写手动 API Token",
+      "Connect Cloudflare or configure a manual API Token first"));
+  }
+  delete request.auth;
+  request.headers.Authorization = "Bearer " + config.token;
+  var manualResponse = JSON.parse(host.request(JSON.stringify(request)));
+  manualResponse.authMethod = "manual";
+  return manualResponse;
+}
+
+function cfAuthError(response) {
+  if (response.status !== 401) return "";
+  return response.authMethod === "oauth" ?
+    cfText("Cloudflare 网页授权已失效，请在插件设置中重新连接", "Cloudflare authorization expired; reconnect in plugin settings") :
+    cfText("手动 API Token 无效，请在插件设置中更换或清除", "Manual API Token is invalid; replace or clear it in plugin settings");
+}
+
 function cfRequest(method, path, payload) {
   var config = cfConfig();
-  if (!config.token) return cfError(cfText("请先配置 Cloudflare API Token", "Configure a Cloudflare API Token first"));
   var request = {method:method, url:CF_API + path,
-    headers:{"Accept":"application/json", "Authorization":"Bearer " + config.token}};
+    headers:{"Accept":"application/json"}};
   if (payload !== undefined) {
     request.headers["Content-Type"] = "application/json";
     request.body = JSON.stringify(payload);
   }
   var response;
-  try { response = JSON.parse(host.request(JSON.stringify(request))); }
+  try { response = cfAuthorizedRequest(request, config); }
   catch (error) { return cfError(cfSafeMessage(error && error.message, config.token) || cfText("网络或授权失败", "Network or authorization failed")); }
   var body;
   try { body = JSON.parse(response.body || "{}"); }
@@ -39,27 +63,26 @@ function cfRequest(method, path, payload) {
   if (response.status < 200 || response.status >= 300 || body.success !== true || body.errors && body.errors.length) {
     var first = body.errors && body.errors[0];
     var detail = first && first.message || body.message || cfText("Cloudflare 请求失败", "Cloudflare request failed");
-    return cfError(cfSafeMessage(detail, config.token), response.status);
+    return cfError(cfAuthError(response) || cfSafeMessage(detail, config.token), response.status);
   }
   return {ok:true, status:response.status, data:body.result, info:body.result_info || {}};
 }
 
 function cfGraphQL(zoneID) {
   var config = cfConfig();
-  if (!config.token) return cfError(cfText("请先配置 Cloudflare API Token", "Configure a Cloudflare API Token first"));
   var end = new Date();
   var start = new Date(end.getTime() - 24 * 3600000);
   var query = "query($zoneTag: string!, $start: Time!, $end: Time!) { viewer { zones(filter: {zoneTag: $zoneTag}) { httpRequestsAdaptiveGroups(limit: 100, filter: {datetime_geq: $start, datetime_lt: $end, requestSource: \"eyeball\"}, orderBy: [datetimeHour_ASC]) { dimensions { datetimeHour } count sum { edgeResponseBytes } } } } }";
   var request = {method:"POST",url:CF_API + "/graphql",headers:{"Accept":"application/json",
-    "Authorization":"Bearer " + config.token,"Content-Type":"application/json"},
+    "Content-Type":"application/json"},
     body:JSON.stringify({query:query,variables:{zoneTag:zoneID,start:start.toISOString(),end:end.toISOString()}})};
   var response, body;
-  try { response = JSON.parse(host.request(JSON.stringify(request))); }
+  try { response = cfAuthorizedRequest(request, config); }
   catch (error) { return cfError(cfSafeMessage(error && error.message, config.token)); }
   try { body = JSON.parse(response.body || "{}"); }
   catch (_) { return cfError(cfText("流量数据无效", "Invalid traffic response"), response.status); }
   if (response.status < 200 || response.status >= 300 || body.errors && body.errors.length) {
-    return cfError(cfSafeMessage(body.errors && body.errors[0] && body.errors[0].message ||
+    return cfError(cfAuthError(response) || cfSafeMessage(body.errors && body.errors[0] && body.errors[0].message ||
       cfText("流量查询失败或缺少 Analytics Read 权限", "Traffic unavailable or Analytics Read permission missing"), config.token), response.status);
   }
   var zones = body.data && body.data.viewer && body.data.viewer.zones;

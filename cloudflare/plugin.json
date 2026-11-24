@@ -4,11 +4,22 @@
   "description": "查看域名、流量、DNS、Workers 与 Pages，并由 Agent 安全管理常用操作。",
   "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/cloudflare.png",
   "pe": "Cloudflare 插件已挂载。涉及用户 Cloudflare 域名、流量、DNS 或 Workers/Pages 部署时，直接用本插件查询真实数据，并用文字说明结果。查询域名概览可用 zone_overview；目标不明确时先列出 zones 或 pages_projects，不猜 Zone、记录或部署 ID。写操作只在用户要求时调用，App 会确认；DNS 修改和删除先用 dns_records 确认目标记录，缓存只清指定 URL，Pages 仅重试失败部署。权限不足或数据缺失时明确说明，不编造指标或部署结果，不输出令牌。",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "files": {"main.js": "main.js"},
   "networkHosts": ["api.cloudflare.com"],
+  "oauth": {
+    "provider": "cloudflare",
+    "clientID": "b58fe3d0863f532fd442a861f5c20fae",
+    "authorizationURL": "https://dash.cloudflare.com/oauth2/auth",
+    "tokenURL": "https://dash.cloudflare.com/oauth2/token",
+    "redirectURL": "https://oauth.myservers.plus/cloudflare",
+    "callbackURL": "cuebo://plugin-auth/cloudflare",
+    "scope": "page.read page.write workers-scripts.content_read dns.read dns.write zone.read analytics.read cache.purge offline_access",
+    "tokenField": "token",
+    "apiHosts": ["api.cloudflare.com"]
+  },
   "config": [
-    {"id": "token", "title": "Cloudflare API Token", "type": "secret", "required": true},
+    {"id": "token", "title": "手动 API Token（备用）", "type": "secret", "required": true},
     {"id": "account_id", "title": "账户 ID（查询 Workers/Pages 时填写）", "type": "text"}
   ],
   "tools": [

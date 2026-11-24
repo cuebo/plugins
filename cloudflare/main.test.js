@@ -11,6 +11,8 @@ let record = {id: recordID, zone_id: zoneID, type: "A", name: "www.example.com",
 let deploymentStatus = "failure";
 let denied = new Set();
 let token = "test-token";
+let oauthConnected = true;
+let unauthorized = false;
 let language = "zh-Hans";
 const requests = [];
 const tools = {};
@@ -26,9 +28,15 @@ const host = {
   config: () => JSON.stringify({token, account_id: accountID}),
   request: raw => {
     const request = JSON.parse(raw);
-    requests.push(request);
     assert(request.url.startsWith("https://api.cloudflare.com/client/v4/"));
-    assert.strictEqual(request.headers.Authorization, "Bearer test-token");
+    if (request.auth === "oauth") {
+      assert.strictEqual(request.headers.Authorization, undefined);
+      if (!oauthConnected) throw new Error("请先连接插件账号，或重新授权");
+    } else {
+      assert.strictEqual(request.headers.Authorization, "Bearer " + token);
+    }
+    requests.push(request);
+    if (unauthorized) return JSON.stringify({status: 401, body: JSON.stringify({success: false, errors: [{message: "invalid credentials"}]})});
     const path = request.url.slice("https://api.cloudflare.com/client/v4".length);
     if (denied.has(path.split("?")[0])) return JSON.stringify({status: 403, body: JSON.stringify({success: false, errors: [{message: "permission denied"}]})});
     if (path === "/graphql") {
@@ -78,6 +86,15 @@ function invoke(name, input = {}) { return JSON.parse(tools[name](JSON.stringify
 function lastRequest() { return requests[requests.length - 1]; }
 
 const manifest = JSON.parse(fs.readFileSync(__dirname + "/plugin.json", "utf8"));
+assert.strictEqual(manifest.oauth.provider, "cloudflare");
+assert.strictEqual(manifest.oauth.redirectURL, "https://oauth.myservers.plus/cloudflare");
+assert.strictEqual(manifest.oauth.callbackURL, "cuebo://plugin-auth/cloudflare");
+assert.strictEqual(manifest.oauth.tokenField, "token");
+assert.deepStrictEqual(manifest.oauth.apiHosts, manifest.networkHosts);
+for (const scope of ["page.read", "page.write", "workers-scripts.content_read", "dns.read", "dns.write",
+                     "zone.read", "analytics.read", "cache.purge", "offline_access"]) {
+  assert(manifest.oauth.scope.split(" ").includes(scope));
+}
 assert.strictEqual(manifest.tools.length, Object.keys(tools).length);
 assert.notStrictEqual(manifest.ui, true);
 assert(!manifest.uiProtocol && !manifest.capabilities?.includes("generative_ui"));
@@ -128,10 +145,24 @@ assert.strictEqual(degraded.traffic.available, false);
 denied.clear();
 assert.strictEqual(context.actions, undefined);
 
+assert.strictEqual(requests[0].auth, "oauth");
+assert.strictEqual(requests.find(r => r.url.endsWith("/graphql")).auth, "oauth");
+oauthConnected = false;
+assert.strictEqual(invoke("zones").ok, true);
+assert.strictEqual(lastRequest().headers.Authorization, "Bearer test-token");
+unauthorized = true;
+assert.strictEqual(invoke("zones").error, "手动 API Token 无效，请在插件设置中更换或清除");
+unauthorized = false;
+oauthConnected = true;
+assert.strictEqual(invoke("zones").ok, true);
+unauthorized = true;
+assert.strictEqual(invoke("zones").error, "Cloudflare 网页授权已失效，请在插件设置中重新连接");
+unauthorized = false;
+oauthConnected = false;
 token = "";
 const requestCount = requests.length;
 assert.strictEqual(invoke("zones").ok, false);
 assert.strictEqual(requests.length, requestCount);
 language = "en";
-assert.strictEqual(invoke("zones").error, "Configure a Cloudflare API Token first");
+assert.strictEqual(invoke("zones").error, "Connect Cloudflare or configure a manual API Token first");
 console.log("Cloudflare plugin tests passed");

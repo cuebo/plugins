@@ -133,7 +133,9 @@ return response.body; // 需要结构化内容时再 JSON.parse(response.body)
 }
 ```
 
-`tokenField` 须对应 `config` 中的 `secret` 字段；该字段可供用户手动填令牌作为备用方式，网页授权成功后即满足它的必填要求。`apiHosts` 必须同时列入 `networkHosts`。脚本向受信 API 发请求时设置 `auth: "oauth"`，由 App 在请求发出前添加 Bearer 头；只对 `apiHosts` 中的精确 HTTPS 域名生效，不能自行设置 `Authorization` 头。若要支持手动令牌，脚本可优先使用 `host.config()` 返回的手动值。插件包只声明流程和公开 Client ID；GitHub Client Secret 不得放进插件仓库。
+`tokenField` 须对应 `config` 中的 `secret` 字段；该字段可供用户手动填令牌作为备用方式，网页授权成功后即满足它的必填要求。`apiHosts` 必须同时列入 `networkHosts`。脚本向受信 API 发请求时设置 `auth: "oauth"`，由 App 在请求发出前添加 Bearer 头；只对 `apiHosts` 中的精确 HTTPS 域名生效，不能自行设置 `Authorization` 头。若要支持手动令牌，脚本可在未连接网页授权时回退到 `host.config()` 返回的手动值。插件包只声明流程和公开 Client ID；GitHub Client Secret 不得放进插件仓库。
+
+若服务只接受 HTTPS 回调，`redirectURL` 填已注册的 HTTPS 地址，另加 `"callbackURL": "cuebo://plugin-auth/example"`。HTTPS 入口应只将 `code`、`state` 或错误参数重定向到该 App 回调，不记录令牌；App 会核对回调和 `state`，再用 PKCE 换取令牌。Cloudflare 使用的通用回调 Worker 见 [`infra/oauth-relay/`](../infra/oauth-relay/) 。
 
 ## 调用系统能力：`host.call(action, argsJSON)`
 
