@@ -56,6 +56,19 @@
       "networkHosts": [
         "api.telegram.org"
       ]
+    },
+    {
+      "id": "v2ex",
+      "name": "V2EX",
+      "description": "免登录浏览热门与最新主题；配置个人访问令牌后读取节点、主题和提醒，并发帖、回复及管理自己的主题。",
+      "iconURL": null,
+      "version": "1.0.0",
+      "path": "v2ex",
+      "toolCount": 15,
+      "networkHosts": [
+        "www.v2ex.com",
+        "edge.v2ex.com"
+      ]
     }
   ]
 }
