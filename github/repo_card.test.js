@@ -130,8 +130,9 @@ const missing = run({repository: null});
 assert.strictEqual(JSON.parse(missing.tools.repo_card(JSON.stringify({owner: "openui-labs", repo: "awesome-ui-kit"}))).ok, false);
 assert.strictEqual(missing.shown.length, 0);
 const noToken = run({noToken: true});
-assert.strictEqual(JSON.parse(noToken.tools.repo_card(JSON.stringify({owner: "openui-labs", repo: "awesome-ui-kit"}))).ok, false);
-assert.strictEqual(noToken.calls.length, 0);
+assert.strictEqual(JSON.parse(noToken.tools.repo_card(JSON.stringify({owner: "openui-labs", repo: "awesome-ui-kit"}))).shown, true);
+assert(noToken.calls.length > 0);
+assert(noToken.calls.every(request => request.auth === "oauth" && !request.headers.Authorization));
 assert.throws(() => success.tools.repo_card(JSON.stringify({owner: "../bad", repo: "x"})), /无效/);
 
 if (process.env.CUEBO_CARD_SAMPLE) {

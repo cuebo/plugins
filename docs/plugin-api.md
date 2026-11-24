@@ -116,6 +116,25 @@ return response.body; // 需要结构化内容时再 JSON.parse(response.body)
 
 可在包内列出预计访问的域名：`"networkHosts": ["api.example.com"]`（最多 8 个）。这只是供用户了解和预授权，**不是插件自授予权限**。调用未授权域名时，App 自动展示插件名与域名；用户同意后按插件和 Agent 加白，后续请求直接使用，用户可在插件详情撤销。插件版本或脚本变化后需重新授权。无需为每个插件各写一套授权弹窗。域名获准后，插件能够把它已读取的配置、对话上下文或其他数据发往该域名；只安装和授权可信插件。
 
+### 网页授权
+
+支持 OAuth 2.0 授权码与 PKCE 的服务可在 `plugin.json` 声明 `oauth`。App 在插件设置中提供连接入口，打开系统授权页面、核对回调与 `state`、换取并刷新令牌，按插件及 Agent 将令牌保存在本机钥匙串。插件脚本无法通过 `host.config()` 读取该令牌。GitHub 插件可参考 [`github/plugin.json`](../github/plugin.json)；它使用 App 内配置的 GitHub Client Secret。其他服务需要支持无 Client Secret 的公开客户端授权码交换。
+
+```json
+"oauth": {
+  "provider": "example",
+  "clientID": "公开客户端 ID",
+  "authorizationURL": "https://example.com/oauth/authorize",
+  "tokenURL": "https://example.com/oauth/token",
+  "redirectURL": "cuebo://plugin-auth/example",
+  "scope": "read",
+  "tokenField": "token",
+  "apiHosts": ["api.example.com"]
+}
+```
+
+`tokenField` 须对应 `config` 中的 `secret` 字段；该字段可供用户手动填令牌作为备用方式，网页授权成功后即满足它的必填要求。`apiHosts` 必须同时列入 `networkHosts`。脚本向受信 API 发请求时设置 `auth: "oauth"`，由 App 在请求发出前添加 Bearer 头；只对 `apiHosts` 中的精确 HTTPS 域名生效，不能自行设置 `Authorization` 头。若要支持手动令牌，脚本可优先使用 `host.config()` 返回的手动值。插件包只声明流程和公开 Client ID；GitHub Client Secret 不得放进插件仓库。
+
 ## 调用系统能力：`host.call(action, argsJSON)`
 
 包声明 `capabilities`，且 Agent 同时启用对应能力后才可调用。返回值是 JSON 字符串；正常结果通常有 `text`，图片结果有 `image`（`data:image/jpeg;base64,...`），失败有 `error`。脚本应检查 `error`。

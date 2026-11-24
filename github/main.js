@@ -9,15 +9,19 @@ function text(value, label, limit, required) {
   if (typeof value !== "string" || value.length > limit) throw new Error(label + " 过长或无效");
   return value;
 }
-function api(method, path, body) {
+function githubRequest(request) {
   var config = JSON.parse(host.config());
-  if (!config.token) return JSON.stringify({ok:false, error:"请先在此 Agent 的 GitHub 插件配置中填写访问令牌"});
-  var response = JSON.parse(host.request(JSON.stringify({
+  if (config.token) request.headers.Authorization = "Bearer " + config.token;
+  else request.auth = "oauth";
+  return JSON.parse(host.request(JSON.stringify(request)));
+}
+function api(method, path, body) {
+  var response = githubRequest({
     method:method, url:"https://api.github.com" + path,
-    headers:{"Accept":"application/vnd.github+json", "Authorization":"Bearer " + config.token,
+    headers:{"Accept":"application/vnd.github+json",
       "X-GitHub-Api-Version":"2022-11-28", "Content-Type":"application/json"},
     body:body == null ? "" : JSON.stringify(body)
-  })));
+  });
   var data;
   try { data = JSON.parse(response.body || "null"); } catch (_) { data = response.body || ""; }
   if (response.status < 200 || response.status >= 300) return JSON.stringify({ok:false,status:response.status,error:data && data.message ? data.message : "GitHub 请求失败"});
@@ -50,14 +54,12 @@ registerTool("update_issue", function(raw) { var a=JSON.parse(raw), change={}; i
 registerTool("merge_pull", function(raw) { var a=JSON.parse(raw), method=a.merge_method||"merge"; if (["merge","squash","rebase"].indexOf(method)<0) throw new Error("合并方式无效"); var change={merge_method:method}; if (a.commit_title != null) change.commit_title=text(a.commit_title,"提交标题",256,true); return api("PUT",repoPath(a)+"/pulls/"+number(a.number)+"/merge",change); });
 
 function profileGraphQL(query, variables) {
-  var config = JSON.parse(host.config());
-  if (!config.token) return {ok:false,error:"请先在此 Agent 的 GitHub 插件配置中填写访问令牌"};
-  var response = JSON.parse(host.request(JSON.stringify({
+  var response = githubRequest({
     method:"POST",url:"https://api.github.com/graphql",
-    headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer " + config.token,
+    headers:{"Accept":"application/vnd.github+json",
       "X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"},
     body:JSON.stringify({query:query,variables:variables})
-  })));
+  });
   var body;
   try { body = JSON.parse(response.body || "{}"); } catch (_) { body = {}; }
   if (response.status < 200 || response.status >= 300 || !body.data || body.errors && body.errors.length) {
@@ -104,15 +106,13 @@ function profileStat(id, title, value) {
 }
 
 function repositoryHTTP(path) {
-  var config = JSON.parse(host.config());
-  if (!config.token) return {ok:false,error:"请先在此 Agent 的 GitHub 插件配置中填写访问令牌"};
   var response;
   try {
-    response = JSON.parse(host.request(JSON.stringify({
+    response = githubRequest({
       method:"GET",url:"https://api.github.com" + path,
-      headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer " + config.token,
+      headers:{"Accept":"application/vnd.github+json",
         "X-GitHub-Api-Version":"2022-11-28"}
-    })));
+    });
   } catch (_) { return {ok:false,error:"GitHub 附加数据暂不可用"}; }
   var data;
   try { data = JSON.parse(response.body || "null"); } catch (_) { data = null; }

@@ -1,6 +1,8 @@
 # GitHub 插件
 
-在 Agent 中配置 GitHub 访问令牌后，询问“看下我的 GitHub 主页”会调用 `profile_card`，在对话中显示个人概览。已有仓库、Issue 和 Pull Request 工具继续可用。
+在 Agent 中添加 GitHub 插件后，打开插件设置里的「账号连接」，点「连接 GitHub」完成网页授权。也可以填写手动访问令牌作为备用方式。询问“看下我的 GitHub 主页”会调用 `profile_card`，在对话中显示个人概览。已有仓库、Issue 和 Pull Request 工具继续可用。
+
+网页授权由 App 打开 GitHub 页面并接收回调；App 将用户令牌保存在本机钥匙串，插件脚本只声明 `auth: "oauth"`，不会读取该令牌。首次调用 GitHub API 时仍需允许插件访问 `api.github.com`。GitHub App 还须安装到目标账号或组织，并授予对应仓库访问范围，才可使用仓库、Issue 和 Pull Request 权限。移除此设备的连接只清除本机凭据；撤销 GitHub 端授权需在 GitHub 设置中操作。
 
 询问“看下 owner/repo 仓库”会调用 `repo_card`，在对话中显示仓库概览。卡片用现有的深色容器、文字、图标、网格、标签和提交热力图组合，不需要新的 App 组件。顶部显示仓库名、Stars 和简介，中部显示主语言、许可证、分支数、标签数与代码更新时间，底部显示近一年提交热力图。Forks、开放 Issue、开放 Pull Request、Watchers 和贡献者仍由工具结果返回。
 
