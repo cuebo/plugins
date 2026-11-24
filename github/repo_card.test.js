@@ -25,6 +25,9 @@ function run(options = {}) {
     request: raw => {
       const request = JSON.parse(raw);
       calls.push(request);
+      if (options.oauthUnavailable && request.auth === "oauth") throw new Error("请先连接插件账号，或重新授权");
+      if (options.authRejected) return JSON.stringify({status: 401, body: JSON.stringify({message: "Bad credentials"})});
+      if (request.url.includes("/user/repos?")) return JSON.stringify({status: 200, body: "[]"});
       if (request.url.endsWith("/graphql")) {
         assert.strictEqual(request.method, "POST");
         const body = JSON.parse(request.body);
@@ -133,6 +136,15 @@ const noToken = run({noToken: true});
 assert.strictEqual(JSON.parse(noToken.tools.repo_card(JSON.stringify({owner: "openui-labs", repo: "awesome-ui-kit"}))).shown, true);
 assert(noToken.calls.length > 0);
 assert(noToken.calls.every(request => request.auth === "oauth" && !request.headers.Authorization));
+assert(success.calls.every(request => request.auth === "oauth" && !request.headers.Authorization));
+const fallback = run({oauthUnavailable: true});
+assert.strictEqual(JSON.parse(fallback.tools.repos("{}") ).ok, true);
+assert.strictEqual(fallback.calls[0].auth, "oauth");
+assert.strictEqual(fallback.calls[1].headers.Authorization, "Bearer test-token");
+const rejected = run({authRejected: true});
+assert.match(JSON.parse(rejected.tools.repos("{}")).error, /重新连接 GitHub/);
+const manualRejected = run({oauthUnavailable: true, authRejected: true});
+assert.match(JSON.parse(manualRejected.tools.repos("{}")).error, /手动访问令牌无效/);
 assert.throws(() => success.tools.repo_card(JSON.stringify({owner: "../bad", repo: "x"})), /无效/);
 
 if (process.env.CUEBO_CARD_SAMPLE) {

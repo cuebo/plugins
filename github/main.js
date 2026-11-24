@@ -11,9 +11,25 @@ function text(value, label, limit, required) {
 }
 function githubRequest(request) {
   var config = JSON.parse(host.config());
-  if (config.token) request.headers.Authorization = "Bearer " + config.token;
-  else request.auth = "oauth";
-  return JSON.parse(host.request(JSON.stringify(request)));
+  request.auth = "oauth";
+  try {
+    var oauthResponse = JSON.parse(host.request(JSON.stringify(request)));
+    oauthResponse.authMethod = "oauth";
+    return oauthResponse;
+  } catch (error) {
+    if (!config.token || String(error).indexOf("请先连接插件账号") < 0) throw error;
+  }
+  delete request.auth;
+  request.headers.Authorization = "Bearer " + config.token;
+  var manualResponse = JSON.parse(host.request(JSON.stringify(request)));
+  manualResponse.authMethod = "manual";
+  return manualResponse;
+}
+function githubError(response, fallback) {
+  if (response.status === 401) return response.authMethod === "oauth" ?
+    "GitHub 网页授权已失效，请在插件设置中重新连接 GitHub" :
+    "手动访问令牌无效，请在插件设置中更换令牌，或清除后连接 GitHub";
+  return fallback || "GitHub 请求失败";
 }
 function api(method, path, body) {
   var response = githubRequest({
@@ -24,7 +40,7 @@ function api(method, path, body) {
   });
   var data;
   try { data = JSON.parse(response.body || "null"); } catch (_) { data = response.body || ""; }
-  if (response.status < 200 || response.status >= 300) return JSON.stringify({ok:false,status:response.status,error:data && data.message ? data.message : "GitHub 请求失败"});
+  if (response.status < 200 || response.status >= 300) return JSON.stringify({ok:false,status:response.status,error:githubError(response, data && data.message)});
   return JSON.stringify({ok:true,status:response.status,data:compact(data)});
 }
 function compact(data) {
@@ -63,8 +79,8 @@ function profileGraphQL(query, variables) {
   var body;
   try { body = JSON.parse(response.body || "{}"); } catch (_) { body = {}; }
   if (response.status < 200 || response.status >= 300 || !body.data || body.errors && body.errors.length) {
-    return {ok:false,status:response.status,error:body.errors && body.errors[0] && body.errors[0].message ||
-      body.message || "GitHub 数据查询失败"};
+    return {ok:false,status:response.status,error:githubError(response, body.errors && body.errors[0] && body.errors[0].message ||
+      body.message || "GitHub 数据查询失败")};
   }
   return {ok:true,data:body.data};
 }
@@ -117,7 +133,7 @@ function repositoryHTTP(path) {
   var data;
   try { data = JSON.parse(response.body || "null"); } catch (_) { data = null; }
   if (response.status < 200 || response.status >= 300) {
-    return {ok:false,status:response.status,error:data && data.message || "GitHub 请求失败"};
+    return {ok:false,status:response.status,error:githubError(response, data && data.message)};
   }
   return {ok:true,status:response.status,data:data,link:response.link || ""};
 }
