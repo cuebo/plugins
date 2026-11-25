@@ -36,6 +36,18 @@
       ]
     },
     {
+      "id": "notion",
+      "name": "Notion",
+      "description": "查找和阅读已授权的 Notion 页面、数据源，并在确认后创建页面或追加内容。",
+      "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/notion.png",
+      "version": "1.0.0",
+      "path": "notion",
+      "toolCount": 6,
+      "networkHosts": [
+        "api.notion.com"
+      ]
+    },
+    {
       "id": "server-status",
       "name": "服务器管理",
       "description": "展示服务器或 NAS 状态，并在 Agent 选定的运行环境中查询 Docker 容器卡片",

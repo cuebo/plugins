@@ -1,0 +1,65 @@
+{
+  "id": "notion",
+  "name": "Notion",
+  "description": "查找和阅读已授权的 Notion 页面、数据源，并在确认后创建页面或追加内容。",
+  "iconURL": "https://raw.githubusercontent.com/cuebo/plugins/main/icons/notion.png",
+  "pe": "Notion 插件已挂载。只查询用户授权给此连接的页面和数据源。先用 search 找到准确 ID；search 只按标题匹配，不支持正文全文搜索。读取内容用 read_page 或 list_block_children；数据源条目用 query_data_source。用户明确要求写入时，先确认目标页面，再调用 create_page 或 append_page_text，App 会要求用户确认。不得猜测未授权页面、声称已搜索全部工作区，或输出令牌。",
+  "version": "1.0.0",
+  "files": {"main.js": "main.js"},
+  "networkHosts": ["api.notion.com"],
+  "oauth": {
+    "provider": "notion",
+    "clientID": "423d872b-594c-8178-a94a-0037e60ff2f3",
+    "authorizationURL": "https://oauth.myservers.plus/notion/authorize",
+    "tokenURL": "https://oauth.myservers.plus/notion/token",
+    "redirectURL": "https://oauth.myservers.plus/notion",
+    "callbackURL": "cuebo://plugin-auth/notion",
+    "tokenField": "token",
+    "apiHosts": ["api.notion.com"]
+  },
+  "config": [
+    {"id": "token", "title": "手动访问令牌（备用）", "type": "secret", "required": true}
+  ],
+  "tools": [
+    {"name": "search", "description": "按标题查找已授权页面和数据源，或列出最近编辑的内容。", "parameters": {
+      "query": {"type": "string", "description": "标题关键词；省略时按最近编辑时间列出。"},
+      "cursor": {"type": "string", "description": "上一页返回的 next_cursor。"}
+    }},
+    {"name": "read_page", "description": "读取已授权页面的属性和第一批正文块。", "parameters": {
+      "page_id": {"type": "string", "description": "Notion 页面 ID。", "required": true},
+      "cursor": {"type": "string", "description": "正文分页游标；首次读取可省略。"}
+    }},
+    {"name": "list_block_children", "description": "读取页面或嵌套块的子内容，可继续分页。", "parameters": {
+      "block_id": {"type": "string", "description": "页面或块 ID。", "required": true},
+      "cursor": {"type": "string", "description": "上一页返回的 next_cursor。"}
+    }},
+    {"name": "query_data_source", "description": "列出已授权数据源中的条目及常见属性。", "parameters": {
+      "data_source_id": {"type": "string", "description": "先由 search 找到的数据源 ID。", "required": true},
+      "cursor": {"type": "string", "description": "上一页返回的 next_cursor。"}
+    }},
+    {"name": "create_page", "description": "在已授权页面下新建包含标题与正文的子页面；执行前需确认。", "requiresApproval": true, "parameters": {
+      "parent_page_id": {"type": "string", "description": "目标父页面 ID，先查询确认。", "required": true},
+      "title": {"type": "string", "description": "新页面标题。", "required": true},
+      "text": {"type": "string", "description": "可选的页面正文。"}
+    }},
+    {"name": "append_page_text", "description": "向已授权页面末尾追加一段正文；执行前需确认。", "requiresApproval": true, "parameters": {
+      "page_id": {"type": "string", "description": "目标页面 ID，先查询确认。", "required": true},
+      "text": {"type": "string", "description": "要追加的正文。", "required": true}
+    }}
+  ],
+  "localizations": {
+    "en": {
+      "name": "Notion",
+      "description": "Find and read connected Notion pages and data sources, then create or append content with approval.",
+      "pe": "Use this plugin only for pages and data sources selected during Notion authorization. Discover IDs before reading or writing. Search matches titles, not page body text. Call write tools only on the user's request; the App confirms each change. Never expose credentials or claim full-workspace access.",
+      "toolDescriptions": {
+        "search": "Find connected pages and data sources by title, or list recently edited content.",
+        "read_page": "Read a page's properties and first page of content blocks.",
+        "list_block_children": "Read and paginate child blocks of a page or block.",
+        "query_data_source": "List entries and common properties in a connected data source.",
+        "create_page": "Create a child page under a verified page after approval.",
+        "append_page_text": "Append text to a verified page after approval."
+      }
+    }
+  }
+}
