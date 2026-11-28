@@ -6,18 +6,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = ROOT / "index.json"
+ENGLISH = ROOT / "catalog_en.json"
 
 
 def build():
     entries = []
+    english = json.loads(ENGLISH.read_text(encoding="utf-8"))
     for manifest in sorted(ROOT.glob("*/plugin.json")):
         plugin = json.loads(manifest.read_text(encoding="utf-8"))
         if not isinstance(plugin.get("tools"), list) or not plugin.get("id"):
             raise ValueError(f"invalid manifest: {manifest}")
+        translation = english.get(plugin["id"])
+        if not isinstance(translation, dict) or not all(
+            isinstance(translation.get(key), str) and translation[key].strip()
+            for key in ("name", "description")
+        ):
+            raise ValueError(f"missing English catalog text: {manifest}")
         entries.append({
             "id": plugin["id"],
             "name": plugin["name"],
             "description": plugin.get("description", ""),
+            "localizations": {"en": translation},
             "iconURL": plugin.get("iconURL"),
             "version": plugin["version"],
             "path": manifest.parent.name,
@@ -26,6 +35,8 @@ def build():
         })
     if len({entry["id"] for entry in entries}) != len(entries):
         raise ValueError("duplicate plugin ID")
+    if set(english) != {entry["id"] for entry in entries}:
+        raise ValueError("English catalog has unknown plugin IDs")
     return json.dumps({"schemaVersion": 1, "plugins": entries}, ensure_ascii=False, indent=2) + "\n"
 
 

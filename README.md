@@ -4,7 +4,7 @@
 
 ## 插件列表
 
-App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引记录每个插件的 ID、名称、简介、可选图标地址、版本、目录、工具数量和网络域名；插件清单和脚本仍分别放在各自目录。添加或更新插件后运行 `python3 scripts/generate-index.py`，用 `python3 scripts/generate-index.py --check` 检查索引是否同步。
+App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引记录每个插件的 ID、名称、简介、英文名称与简介、可选图标地址、版本、目录、工具数量和网络域名；插件清单和脚本仍分别放在各自目录。英文商店文案维护在 [`catalog_en.json`](catalog_en.json)，新增插件时必须同时补充。添加或更新插件后运行 `python3 scripts/generate-index.py`，用 `python3 scripts/generate-index.py --check` 检查索引是否同步。
 
 | 目录 | 用途 | 导入地址 |
 | --- | --- | --- |

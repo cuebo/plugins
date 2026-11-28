@@ -1,0 +1,30 @@
+{
+  "basic-cards": {
+    "name": "Basic Cards",
+    "description": "Show full-width information cards and two-column summary cards for verified findings, explanations, resources, trends, and status."
+  },
+  "cloudflare": {
+    "name": "Cloudflare",
+    "description": "View zones, traffic, DNS, Workers, and Pages, and let the Agent safely manage common operations."
+  },
+  "github": {
+    "name": "GitHub",
+    "description": "View profile, contribution calendar, and repository cards, and manage issues and pull requests."
+  },
+  "notion": {
+    "name": "Notion",
+    "description": "Find and read authorized Notion pages and data sources, then create pages or append content with confirmation."
+  },
+  "server-status": {
+    "name": "Server Management",
+    "description": "Show server or NAS status and inspect Docker containers in the Agent's selected environment."
+  },
+  "telegram-groups": {
+    "name": "Telegram Groups",
+    "description": "Read group messages, choose a group, reply, and vote; manage messages and members with confirmation."
+  },
+  "v2ex": {
+    "name": "V2EX",
+    "description": "Browse trending and recent topics without signing in. Add a personal access token to read nodes, topics, and notifications, and to post or manage your topics."
+  }
+}
