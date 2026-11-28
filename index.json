@@ -106,6 +106,25 @@
       ]
     },
     {
+      "id": "twitter",
+      "name": "X / Twitter",
+      "description": "免登录查看公开帖子、线程、用户与趋势；配置 X 开发者令牌后搜索，并经用户令牌管理自己的帖子、点赞、收藏和转发。",
+      "localizations": {
+        "en": {
+          "name": "X / Twitter",
+          "description": "Read public posts, threads, profiles, timelines, and trends; use X API tokens for search and account actions."
+        }
+      },
+      "iconURL": null,
+      "version": "1.0.0",
+      "path": "twitter",
+      "toolCount": 16,
+      "networkHosts": [
+        "api.fxtwitter.com",
+        "api.x.com"
+      ]
+    },
+    {
       "id": "v2ex",
       "name": "V2EX",
       "description": "免登录浏览热门与最新主题；配置个人访问令牌后读取节点、主题和提醒，并发帖、回复及管理自己的主题。",

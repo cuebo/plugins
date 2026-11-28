@@ -23,6 +23,10 @@
     "name": "Telegram Groups",
     "description": "Read group messages, choose a group, reply, and vote; manage messages and members with confirmation."
   },
+  "twitter": {
+    "name": "X / Twitter",
+    "description": "Read public posts, threads, profiles, timelines, and trends; use X API tokens for search and account actions."
+  },
   "v2ex": {
     "name": "V2EX",
     "description": "Browse trending and recent topics without signing in. Add a personal access token to read nodes, topics, and notifications, and to post or manage your topics."

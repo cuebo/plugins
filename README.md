@@ -13,6 +13,7 @@ App 读取根目录的 [`index.json`](index.json) 展示可安装插件。索引
 | [`github/`](github/) | 网页连接 GitHub，展示个人概览、贡献日历，并管理仓库、Issue 和 PR | `https://github.com/cuebo/plugins/tree/main/github` |
 | [`server-status/`](server-status/) | 展示服务器或 NAS 状态，并查询 Docker 容器卡片 | `https://github.com/cuebo/plugins/tree/main/server-status` |
 | [`telegram-groups/`](telegram-groups/) | 读取群消息、选群、回复、投票和群管理 | `https://github.com/cuebo/plugins/tree/main/telegram-groups` |
+| [`twitter/`](twitter/) | 免登录读取公开 X 内容；使用开发者令牌搜索并管理账号操作 | `https://github.com/cuebo/plugins/tree/main/twitter` |
 | [`v2ex/`](v2ex/) | 免登录浏览主题；使用个人令牌读取账号数据并发帖、回复与管理提醒 | `https://github.com/cuebo/plugins/tree/main/v2ex` |
 
 ## 在 App 中安装
